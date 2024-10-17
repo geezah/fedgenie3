@@ -4,6 +4,7 @@ from typing import Annotated, List, Literal, Union
 from pydantic import BaseModel, Field, PositiveInt, field_validator, model_validator
 import csv
 
+
 class GENIE3Config(BaseModel):
     gene_expression_path: Path = Field(
         ...,
@@ -82,14 +83,16 @@ class GENIE3Config(BaseModel):
         Returns:
             self: The instance with validated and possibly updated `gene_names` and `regulators`.
         """
-        
+
         if self.gene_names is None:
             try:
-                with open(self.gene_expression_path, "r", newline='') as f:
+                with open(self.gene_expression_path, "r", newline="") as f:
                     reader = csv.reader(f, delimiter="\t")
                     header = next(reader)
                     if not header:
-                        raise ValueError("The gene expression data file has no header row.")
+                        raise ValueError(
+                            "The gene expression data file has no header row."
+                        )
                     self.gene_names = header
             except Exception as e:
                 raise ValueError(

@@ -66,7 +66,10 @@ def _get_ranked_list(
     ).reset_index(drop=True)
     return gene_rankings
 
-def _compute_importance_matrix(gene_expressions: NDArray[np.float32], config: GENIE3Config) -> NDArray[np.float32]:
+
+def _compute_importance_matrix(
+    gene_expressions: NDArray[np.float32], config: GENIE3Config
+) -> NDArray[np.float32]:
     num_genes = gene_expressions.shape[1]
     importance_matrix = np.zeros((num_genes, num_genes))
 
@@ -76,6 +79,7 @@ def _compute_importance_matrix(gene_expressions: NDArray[np.float32], config: GE
         model.fit(X, y)
         importance_matrix[i, feature_candidates] = model.feature_importances_
     return importance_matrix
+
 
 def genie3(gene_expressions: NDArray[np.float32], config: GENIE3Config) -> pd.DataFrame:
     assert len(gene_expressions.shape) == 2, "Input must be a 2D array"
