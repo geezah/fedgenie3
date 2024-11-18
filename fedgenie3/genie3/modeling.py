@@ -1,120 +1,203 @@
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor
-
-from fedgenie3.genie3.config import GENIE3Config
-
-
-def _load_data(config: GENIE3Config):
-    gene_expressions = pd.read_csv(config.gene_expression_path, delimiter="\t")
-    return gene_expressions.values
+from sklearn.ensemble._forest import ForestRegressor
+from tqdm.auto import tqdm
 
 
-def _init_model(config: GENIE3Config):
-    if config.tree_method == "RF":
-        return RandomForestRegressor(
-            n_estimators=config.n_estimators,
-            max_features=config.max_features,
-            random_state=config.random_state,
-            verbose=1,
-        )
-    elif config.tree_method == "ET":
-        return ExtraTreesRegressor(
-            n_estimators=config.n_estimators,
-            max_features=config.max_features,
-            random_state=config.random_state,
-            verbose=1,
-        )
-    else:
-        raise ValueError(f"Unknown tree_method: {config.tree_method}")
+class GENIE3:
+    def __init__(
+        self,
+        tree_method: str = "RF",
+        tree_init_kwargs: Dict[str, Any] = {},
+        top_k_regulator_candidates: Optional[int] = None,
+    ):
+        self.tree_method = tree_method
+        self.tree_init_kwargs = tree_init_kwargs
+        self.top_k_regulator_candidates = top_k_regulator_candidates
 
+    def _init_model(self) -> ForestRegressor:
+        if self.tree_method == "RF":
+            return RandomForestRegressor(**self.tree_init_kwargs)
+        elif self.tree_method == "ET":
+            return ExtraTreesRegressor(**self.tree_init_kwargs)
+        else:
+            raise ValueError(
+                "Invalid tree method. Choose between 'RF' and 'ET'"
+            )
 
-def _prepare_inputs(
-    gene_expressions: NDArray, target_gene_idx: int, config: GENIE3Config
-):
-    # Remove target gene from regulator list and gene expression matrix
-    regulator_indices = [
-        i for i, _ in enumerate(config.regulators) if i != target_gene_idx
-    ]
-    X = gene_expressions[:, regulator_indices]
-    y = gene_expressions[:, target_gene_idx]
-    return X, y, regulator_indices
+    @staticmethod
+    def _partition_data(
+        gene_expressions: NDArray,
+        target_gene_idx: int,
+        indices_of_candidate_regulators: List[int],
+    ) -> Tuple[NDArray, NDArray]:
+        """
+        Partition gene expression matrix into target gene and candidate regulators.
 
+        Args:
+            gene_expressions (NDArray): Gene expression matrix.
+            target_gene_idx (int): Index of target gene.
+            indices_of_candidate_regulators (List[int]): List of indices of candidate regulators.
 
-def _get_ranked_list(
-    importance_matrix: NDArray[np.float32], config: GENIE3Config
-) -> pd.DataFrame:
-    assert (
-        importance_matrix.shape[0] == importance_matrix.shape[1]
-    ), f"Importance matrix must be square. Got shape: {importance_matrix.shape}"
-
-    gene_rankings = []
-    for i in range(importance_matrix.shape[0]):
-        gene_importances = importance_matrix[i]
-        sorted_indices = np.argsort(gene_importances)[::-1]
-        top_k_gene_regulations = [
-            (config.gene_names[j], config.gene_names[i], gene_importances[j])
-            for j in sorted_indices[: config.top_k_regulators]
+        Returns:
+            Tuple[NDArray, NDArray]: Input and target matrix.
+        """
+        # Remove target gene from regulator list and gene expression matrix
+        input_gene_indices = [
+            i for i in indices_of_candidate_regulators if i != target_gene_idx
         ]
-        gene_rankings.extend(top_k_gene_regulations)
-    gene_rankings = pd.DataFrame(
-        gene_rankings, columns=["regulator_gene", "target_gene", "importance"]
-    )
-    gene_rankings = gene_rankings.sort_values(
-        by="importance", ascending=False
-    ).reset_index(drop=True)
-    return gene_rankings
+        X = gene_expressions[:, input_gene_indices]
+        y = gene_expressions[:, target_gene_idx]
+        return X, y, input_gene_indices
 
+    @staticmethod
+    def _check_before_compute_importances(
+        gene_expressions: NDArray[np.float32],
+        indices_of_candidate_regulators: List[int],
+    ) -> None:
+        # Type checks
+        assert isinstance(
+            gene_expressions, np.ndarray
+        ), "Input must be a numpy array"
+        assert isinstance(
+            indices_of_candidate_regulators, List
+        ), "Regulators must be a list"
+        assert all(
+            isinstance(i, int) for i in indices_of_candidate_regulators
+        ), "Regulator indices must be integers"
 
-def _compute_importance_matrix(
-    gene_expressions: NDArray[np.float32], config: GENIE3Config
-) -> NDArray[np.float32]:
-    num_genes = gene_expressions.shape[1]
-    importance_matrix = np.zeros((num_genes, num_genes))
+        # Shape checks
+        assert len(gene_expressions.shape) == 2, "Input must be a 2D array"
+        assert (
+            len(indices_of_candidate_regulators) > 0
+        ), "Regulator candidate list must not be empty"
+        assert (
+            gene_expressions.shape[1] > 1
+        ), "Gene expression matrix must have more than one gene"
+        assert (
+            gene_expressions.shape[0] > 1
+        ), "Gene expression matrix must have more than one sample"
 
-    for i in range(num_genes):
-        model = _init_model(config)
-        X, y, feature_candidates = _prepare_inputs(gene_expressions, i, config)
-        model.fit(X, y)
-        importance_matrix[i, feature_candidates] = model.feature_importances_
-    return importance_matrix
+        # Value checks
+        assert len(set(indices_of_candidate_regulators)) == len(
+            indices_of_candidate_regulators
+        ), "Regulator candidate list must not contain duplicates"
+        assert all(
+            0 <= i < gene_expressions.shape[1]
+            for i in indices_of_candidate_regulators
+        ), "Regulator candidate indices must be within the range of gene expressions"
 
+    @staticmethod
+    def check_after_compute_importances(
+        importance_matrix: NDArray,
+    ) -> None:
+        assert np.all(
+            importance_matrix >= 0
+        ), "Importances must be non-negative"
+        assert np.allclose(
+            importance_matrix.sum(axis=1), 1
+        ), "Sum of importances assigned to regulator genes must be 1 for each target gene"
 
-def genie3(gene_expressions: NDArray[np.float32], config: GENIE3Config) -> pd.DataFrame:
-    assert len(gene_expressions.shape) == 2, "Input must be a 2D array"
-    assert gene_expressions.shape[1] == len(config.gene_names), (
-        f"Number of columns in gene_expressions ({gene_expressions.shape[1]}) "
-        f"must match the number of genes in gene_names ({len(config.gene_names)})"
-    )
-    importance_matrix = _compute_importance_matrix(gene_expressions, config)
-    gene_ranking = _get_ranked_list(importance_matrix, config)
-    return gene_ranking
+    def compute_importances(
+        self,
+        gene_expressions: NDArray[np.float32],
+        indices_of_candidate_regulators: List[int],
+        dev_run: bool = False,
+    ) -> NDArray[np.float32]:
+        GENIE3._check_before_compute_importances(
+            gene_expressions, indices_of_candidate_regulators
+        )
+        num_genes = gene_expressions.shape[1]
+        num_regulators = len(indices_of_candidate_regulators)
+        importance_matrix = np.zeros(
+            (num_genes, num_regulators), dtype=np.float32
+        )
+        progress_bar = tqdm(
+            range(num_genes),
+            total=num_genes,
+            desc="Computing importances",
+            unit="gene",
+        )
+        for target_gene_index in progress_bar:
+            forest_regressor = self._init_model()
+            X, y, input_gene_indices = GENIE3._partition_data(
+                gene_expressions,
+                target_gene_index,
+                indices_of_candidate_regulators,
+            )
+            forest_regressor.fit(X, y)
+            # TODO: Permutation Importance instead of impurity-based? Challenge: Limited sample size
+            importance_matrix[target_gene_index, input_gene_indices] = (
+                forest_regressor.feature_importances_
+            )
+            if dev_run:
+                break
+        if not dev_run:
+            GENIE3.check_after_compute_importances(importance_matrix)
 
+        return importance_matrix
 
-def main(config: GENIE3Config):
-    gene_expressions = _load_data(config)
-    gene_ranking = genie3(gene_expressions, config)
-    print("GENIE3 Done!")
-    gene_ranking.to_csv(
-        f"{config.gene_expression_path.stem}_GENIE3_{config.tree_method}_rankings.tsv",
-        sep="\t",
-        index=False,
-    )
+    def _get_ranked_list(
+        self,
+        importance_matrix: NDArray[np.float32],
+        indices_of_candidate_regulators: List[int],
+    ) -> pd.DataFrame:
+        gene_rankings = []
+        num_genes, num_regulators,  = (
+            importance_matrix.shape[0],
+            importance_matrix.shape[1],
+        )
+        for i in range(num_genes):
+            for j in range(num_regulators):
+                regulator_target_importance_tuples = (
+                    indices_of_candidate_regulators[j],
+                    i,
+                    importance_matrix[i, j],
+                )
+                gene_rankings.append(regulator_target_importance_tuples)
+        gene_rankings = pd.DataFrame(
+            gene_rankings,
+            columns=["regulator_gene", "target_gene", "importance"],
+        )
+        gene_rankings = gene_rankings.astype(
+            {
+                "regulator_gene": np.uint16,
+                "target_gene": np.uint16,
+                "importance": np.float64,
+            }
+        )
+        gene_rankings.sort_values(
+            by="importance", ascending=False, inplace=True
+        )
+        gene_rankings.reset_index(drop=True, inplace=True)
+        return gene_rankings
+
+    def get_gene_ranking(
+        self,
+        importance_matrix: NDArray[np.float32],
+        indices_of_candidate_regulators: List[int],
+    ) -> pd.DataFrame:
+        gene_ranking = self._get_ranked_list(
+            importance_matrix,
+            indices_of_candidate_regulators,
+        )
+        return gene_ranking
+
+    def run(
+        self,
+        gene_expressions: NDArray[np.float32],
+        indices_of_regulator_candidates: List[int],
+    ) -> pd.DataFrame:
+        importance_matrix = self.compute_importances(
+            gene_expressions, indices_of_regulator_candidates
+        )
+        gene_ranking = self.get_gene_ranking(importance_matrix)
+        return gene_ranking
 
 
 if __name__ == "__main__":
-    config = GENIE3Config(
-        gene_expression_path="data/processed/ss/DREAM4_InSilico_Size10.tsv",
-        gene_names=None,
-        regulators=None,
-        tree_method="RF",
-        max_features="sqrt",
-        n_estimators=30,
-        random_state=42,
-        top_k_regulators=1,
-    )
-    # import json
-    # config_json = config.model_dump(mode='json')
-    # json.dump(config_json, open("config.json", "w"))
-    main(config)
+    pass
