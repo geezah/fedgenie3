@@ -141,13 +141,13 @@ class GENIE3:
 
         return importance_matrix
 
-    def _get_ranked_list(
-        self,
+    @staticmethod
+    def _generate_gene_ranking(
         importance_matrix: NDArray[np.float32],
         indices_of_candidate_regulators: List[int],
-    ) -> pd.DataFrame:
+    ) -> List[Tuple[int, int, float]]:
         gene_rankings = []
-        num_genes, num_regulators,  = (
+        num_genes, num_regulators = (
             importance_matrix.shape[0],
             importance_matrix.shape[1],
         )
@@ -159,13 +159,19 @@ class GENIE3:
                     importance_matrix[i, j],
                 )
                 gene_rankings.append(regulator_target_importance_tuples)
+        return gene_rankings
+
+    @staticmethod
+    def _convert_to_dataframe(
+        gene_rankings: List[Tuple[int, int, float]],
+    ) -> pd.DataFrame:
         gene_rankings = pd.DataFrame(
             gene_rankings,
-            columns=["regulator_gene", "target_gene", "importance"],
+            columns=["transcription_factor", "target_gene", "importance"],
         )
         gene_rankings = gene_rankings.astype(
             {
-                "regulator_gene": np.uint16,
+                "transcription_factor": np.uint16,
                 "target_gene": np.uint16,
                 "importance": np.float64,
             }
@@ -176,16 +182,17 @@ class GENIE3:
         gene_rankings.reset_index(drop=True, inplace=True)
         return gene_rankings
 
-    def get_gene_ranking(
-        self,
+    @staticmethod
+    def rank_genes_by_importance(
         importance_matrix: NDArray[np.float32],
         indices_of_candidate_regulators: List[int],
     ) -> pd.DataFrame:
-        gene_ranking = self._get_ranked_list(
+        gene_rankings = GENIE3._generate_gene_ranking(
             importance_matrix,
             indices_of_candidate_regulators,
         )
-        return gene_ranking
+        gene_rankings = GENIE3._convert_to_dataframe(gene_rankings)
+        return gene_rankings
 
     def run(
         self,
@@ -195,8 +202,8 @@ class GENIE3:
         importance_matrix = self.compute_importances(
             gene_expressions, indices_of_regulator_candidates
         )
-        gene_ranking = self.get_gene_ranking(importance_matrix)
-        return gene_ranking
+        gene_rankings = GENIE3.rank_genes_by_importance(importance_matrix)
+        return gene_rankings
 
 
 if __name__ == "__main__":
