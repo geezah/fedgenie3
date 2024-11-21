@@ -119,8 +119,8 @@ def init_dream_five_dataset(root: Path, network_id: Literal[1, 3, 4]) -> None:
 
 
 def preprocess_dream_five(
-    raw_data_root: Path = Path("data/raw/syn2787209/Gene Network Inference"),
-    processed_data_root: Path = Path("data/processed/dream_five"),
+    raw_data_root: Path = Path("local_data/raw/syn2787209/Gene Network Inference"),
+    processed_data_root: Path = Path("local_data/processed/dream_five"),
 ):
     print(
         f"Processing DREAM5 data from {raw_data_root} to {processed_data_root}"

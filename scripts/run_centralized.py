@@ -7,7 +7,7 @@ app = Typer(pretty_exceptions_show_locals=False)
 
 @app.command()
 def main(
-    root: Path = Path("data/processed/dream_five"),
+    root: Path = Path("local_data/processed/dream_five"),
     network_id: int = 1,
 ):
     run(root, network_id)

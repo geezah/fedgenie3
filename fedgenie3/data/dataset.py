@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     net_id = NETWORK_ID
     net_name = net_id_to_net_name[NETWORK_ID]
-    PROCESSED_DATA_ROOT = Path("data/processed/dream_five")
+    PROCESSED_DATA_ROOT = Path("local_data/processed/dream_five")
     GENE_EXPRESSION_PATH = (
         PROCESSED_DATA_ROOT
         / f"net{net_id}_{net_name}"
