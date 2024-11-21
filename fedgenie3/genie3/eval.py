@@ -24,11 +24,11 @@ def _prepare_evaluation(
         Tuple[NDArray, NDArray]: Tuple containing importance scores and ground truths as NumPy arrays
     """
     merged = predictions.merge(
-        gt, on=["regulator_gene", "target_gene"], how="outer"
+        gt, on=["transcription_factor", "target_gene"], how="outer"
     )
     merged = merged.fillna(0)
     y_scores = merged["importance"].values
-    y_true = merged["ground_truth"].values
+    y_true = merged["label"].values
     return y_scores, y_true
 
 
@@ -49,14 +49,14 @@ def evaluate(
     y_scores, y_true = _prepare_evaluation(predictions, gt)
     auroc_score = auroc(y_true, y_scores)
     aupr_score = auprc(y_true, y_scores)
-    auroc_p = auc_p_value("auroc", y_true, y_scores)
-    aupr_p = auc_p_value("auprc", y_true, y_scores)
+    # auroc_p = auc_p_value(auroc, y_true, y_scores)
+    # aupr_p = auc_p_value(auprc, y_true, y_scores)
 
-    overall_score = -0.5 * np.log10(aupr_p * auroc_p)
+    # overall_score = -0.5 * np.log10(aupr_p * auroc_p)
     return {
         "auroc": auroc_score,
         "aupr": aupr_score,
-        "auroc_p_value": auroc_p,
-        "aupr_p_value": aupr_p,
-        "overall_score": overall_score,
+        # "auroc_p_value": auroc_p,
+        # "aupr_p_value": aupr_p,
+        # "overall_score": overall_score,
     }
