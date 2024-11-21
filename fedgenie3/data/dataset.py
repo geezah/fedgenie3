@@ -42,7 +42,7 @@ class GRNDataset:
         assert set(
             self.reference_network_data["transcription_factor"].unique()
         ).issubset(self.transcription_factor_data.unique())
-        
+
     def _load_gene_expression_data(self) -> pd.Series:
         df = pd.read_csv(self.gene_expression_path, sep="\t")
         return df
