@@ -15,17 +15,17 @@ def run(root : Path, network_id : int):
     GENE_EXPRESSION_PATH = (
         root
         / f"net{network_id}_{network_name}"
-        / f"net{network_id}_{network_name}_expression_data.tsv"
+        / "gene_expression_data.tsv"
     )
     REFERENCE_NETWORK_PATH = (
         root
         / f"net{network_id}_{network_name}"
-        / f"net{network_id}_{network_name}_reference_network_data.tsv"
+        / "reference_network_data.tsv"
     )
     TRANSCRIPTION_FACTOR_PATH = (
         root
         / f"net{network_id}_{network_name}"
-        / f"net{network_id}_{network_name}_transcription_factors.tsv"
+        / "transcription_factors.tsv"
     )
 
     grn_dataset = GRNDataset(

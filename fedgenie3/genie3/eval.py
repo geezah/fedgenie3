@@ -2,12 +2,14 @@ from typing import Tuple
 
 import pandas as pd
 from numpy.typing import NDArray
+
 from fedgenie3.genie3.metrics import (
     auprc,
-    auc_p_value,
+    auprc_permutation_test,
     auroc,
+    auroc_permutation_test,
+    combined_log_p_value,
 )
-import numpy as np
 
 
 def _prepare_evaluation(
@@ -48,15 +50,15 @@ def evaluate(
     """
     y_scores, y_true = _prepare_evaluation(predictions, gt)
     auroc_score = auroc(y_true, y_scores)
-    aupr_score = auprc(y_true, y_scores)
-    # auroc_p = auc_p_value(auroc, y_true, y_scores)
-    # aupr_p = auc_p_value(auprc, y_true, y_scores)
+    auprc_score = auprc(y_true, y_scores)
+    auroc_p_value = auroc_permutation_test(auroc, y_true, y_scores)
+    auprc_p_value = auprc_permutation_test(auprc, y_true, y_scores)
+    overall_score = combined_log_p_value(auroc_p_value, auprc_p_value)
 
-    # overall_score = -0.5 * np.log10(aupr_p * auroc_p)
     return {
         "auroc": auroc_score,
-        "aupr": aupr_score,
-        # "auroc_p_value": auroc_p,
-        # "aupr_p_value": aupr_p,
-        # "overall_score": overall_score,
+        "aupr": auprc_score,
+        "auroc_p_value": auroc_p_value,
+        "auprc_p_value": auprc_p_value,
+        "overall_score": overall_score,
     }

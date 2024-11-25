@@ -15,7 +15,7 @@ def auroc(y_true: NDArray, y_scores: NDArray) -> float:
 
 
 # TODO: Write two separate functions for auroc and auprc p-values where the metric is passed as an argument
-def auc_p_value(
+def permutation_test(
     metric: Callable[[NDArray, NDArray], float],
     y_true: NDArray,
     y_scores: NDArray,
@@ -29,7 +29,6 @@ def auc_p_value(
         y_true (np.ndarray): Ground truth labels.
         y_scores (np.ndarray): Predicted scores.
         num_permutations (int): Number of permutations to perform.
-        alternative (str): Alternative hypothesis for the test, either 'greater' or 'less'.
 
     Returns:
         float: P-value for the observed AUC scores.
@@ -68,20 +67,28 @@ def auc_p_value(
     assert 0 < p_value <= 1, "P-value must be between 0 and 1"
     return p_value
 
+def auroc_permutation_test(y_true: NDArray, y_scores: NDArray, num_permutations: int = 1000) -> float:
+    return permutation_test(auroc, y_true, y_scores, num_permutations)
+
+def auprc_permutation_test(y_true: NDArray, y_scores: NDArray, num_permutations: int = 1000) -> float:
+    return permutation_test(auprc, y_true, y_scores, num_permutations)
+
+def combined_log_p_value(auroc_p: float, auprc_p: float) -> float:
+    return -0.5 * np.log10(auroc_p * auprc_p)
 
 if __name__ == "__main__":
     y_true = np.array([0, 1, 1, 0, 1, 0, 1, 0, 1, 0])
     y_scores = np.array([0.1, 0.9, 0.8, 0.3, 0.7, 0.2, 0.6, 0.4, 0.5, 0.1])
     auroc_score = auroc(y_true, y_scores)
-    auroc_p = auc_p_value(auroc, y_true, y_scores)
+    auroc_p_value = permutation_test(auroc, y_true, y_scores)
     auprc_score = auprc(y_true, y_scores)
-    auprc_p = auc_p_value(auprc, y_true, y_scores)
-    overall_score = -0.5 * np.log10(auroc_p * auprc_p)
+    auprc_p_value = permutation_test(auprc, y_true, y_scores)
+    overall_score = combined_log_p_value(auroc_p_value, auprc_p_value)
     results = {
         "auroc": auroc_score,
-        "auroc_p": auroc_p,
+        "auroc_p": auroc_p_value,
         "auprc": auprc_score,
-        "aupr_p": auprc_p,
+        "aupr_p": auprc_p_value,
         "overall_score": overall_score,
     }
     print(results)

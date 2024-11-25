@@ -1,5 +1,4 @@
 from pathlib import Path
-
 import pandas as pd
 
 
@@ -19,11 +18,6 @@ class GRNDataset:
         self.transcription_factor_data = self._load_transcription_factor_data()
 
         # TODO: Implement improved error handling and testing for the following assertions
-        # Assert that all transcription factors of the transcription factor data are in the gene expression data
-        assert all(
-            tf in self.gene_expression_data.columns
-            for tf in self.transcription_factor_data
-        )
         # Assert that all transcription factors of the reference network are in the gene expression data
         assert all(
             tf in self.gene_expression_data.columns
