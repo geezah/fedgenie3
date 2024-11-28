@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -13,11 +13,9 @@ class GENIE3:
         self,
         tree_method: str = "RF",
         tree_init_kwargs: Dict[str, Any] = {},
-        top_k_regulator_candidates: Optional[int] = None,
     ):
         self.tree_method = tree_method
         self.tree_init_kwargs = tree_init_kwargs
-        self.top_k_regulator_candidates = top_k_regulator_candidates
 
     def _init_model(self) -> ForestRegressor:
         if self.tree_method == "RF":
@@ -35,17 +33,6 @@ class GENIE3:
         target_gene_idx: int,
         indices_of_candidate_regulators: List[int],
     ) -> Tuple[NDArray, NDArray]:
-        """
-        Partition gene expression matrix into target gene and candidate regulators.
-
-        Args:
-            gene_expressions (NDArray): Gene expression matrix.
-            target_gene_idx (int): Index of target gene.
-            indices_of_candidate_regulators (List[int]): List of indices of candidate regulators.
-
-        Returns:
-            Tuple[NDArray, NDArray]: Input and target matrix.
-        """
         # Remove target gene from regulator list and gene expression matrix
         input_gene_indices = [
             i for i in indices_of_candidate_regulators if i != target_gene_idx
@@ -53,43 +40,6 @@ class GENIE3:
         X = gene_expressions[:, input_gene_indices]
         y = gene_expressions[:, target_gene_idx]
         return X, y, input_gene_indices
-
-    @staticmethod
-    def _check_before_compute_importances(
-        gene_expressions: NDArray[np.float32],
-        indices_of_candidate_regulators: List[int],
-    ) -> None:
-        # Type checks
-        assert isinstance(
-            gene_expressions, np.ndarray
-        ), "Input must be a numpy array"
-        assert isinstance(
-            indices_of_candidate_regulators, List
-        ), "Regulators must be a list"
-        assert all(
-            isinstance(i, int) for i in indices_of_candidate_regulators
-        ), "Regulator indices must be integers"
-
-        # Shape checks
-        assert len(gene_expressions.shape) == 2, "Input must be a 2D array"
-        assert (
-            len(indices_of_candidate_regulators) > 0
-        ), "Regulator candidate list must not be empty"
-        assert (
-            gene_expressions.shape[1] > 1
-        ), "Gene expression matrix must have more than one gene"
-        assert (
-            gene_expressions.shape[0] > 1
-        ), "Gene expression matrix must have more than one sample"
-
-        # Value checks
-        assert len(set(indices_of_candidate_regulators)) == len(
-            indices_of_candidate_regulators
-        ), "Regulator candidate list must not contain duplicates"
-        assert all(
-            0 <= i < gene_expressions.shape[1]
-            for i in indices_of_candidate_regulators
-        ), "Regulator candidate indices must be within the range of gene expressions"
 
     @staticmethod
     def check_after_compute_importances(
@@ -108,13 +58,10 @@ class GENIE3:
         indices_of_candidate_regulators: List[int],
         dev_run: bool = False,
     ) -> NDArray[np.float32]:
-        GENIE3._check_before_compute_importances(
-            gene_expressions, indices_of_candidate_regulators
-        )
         num_genes = gene_expressions.shape[1]
-        num_regulators = len(indices_of_candidate_regulators)
+        num_candidate_regulators = len(indices_of_candidate_regulators)
         importance_matrix = np.zeros(
-            (num_genes, num_regulators), dtype=np.float32
+            (num_genes, num_candidate_regulators), dtype=np.float32
         )
         progress_bar = tqdm(
             range(num_genes),
@@ -197,12 +144,14 @@ class GENIE3:
     def run(
         self,
         gene_expressions: NDArray[np.float32],
-        indices_of_regulator_candidates: List[int],
+        indices_of_candidate_regulators: List[int],
     ) -> pd.DataFrame:
         importance_matrix = self.compute_importances(
-            gene_expressions, indices_of_regulator_candidates
+            gene_expressions, indices_of_candidate_regulators
         )
-        gene_rankings = GENIE3.rank_genes_by_importance(importance_matrix)
+        gene_rankings = GENIE3.rank_genes_by_importance(
+            importance_matrix, indices_of_candidate_regulators
+        )
         return gene_rankings
 
 

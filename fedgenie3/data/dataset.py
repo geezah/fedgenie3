@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Optional
+
 import pandas as pd
 
 
@@ -6,48 +8,27 @@ class GRNDataset:
     def __init__(
         self,
         gene_expression_path: Path,
-        reference_network_path: Path,
-        transcription_factor_path: Path,
+        transcription_factor_path: Optional[Path] = None,
+        reference_network_path: Optional[Path] = None,
     ):
         self.gene_expression_path = gene_expression_path
-        self.reference_network_path = reference_network_path
         self.transcription_factor_path = transcription_factor_path
+        self.reference_network_path = reference_network_path
 
         self.gene_expression_data = self._load_gene_expression_data()
-        self.reference_network_data = self._load_reference_network_data()
-        self.transcription_factor_data = self._load_transcription_factor_data()
-
-        # TODO: Implement improved error handling and testing for the following assertions
-        # Assert that all transcription factors of the reference network are in the gene expression data
-        assert all(
-            tf in self.gene_expression_data.columns
-            for tf in self.reference_network_data["transcription_factor"]
+        self.transcription_factor_data = (
+            self._load_transcription_factor_data()
+            if transcription_factor_path
+            else None
         )
-        # Assert that all target genes of the reference network are in the gene expression data
-        assert all(
-            target in self.gene_expression_data.columns
-            for target in self.reference_network_data["target_gene"]
+        self.reference_network_data = (
+            self._load_reference_network_data()
+            if reference_network_path
+            else None
         )
-        # Assert that all labels of the reference network are either 0 or 1
-        assert all(
-            label in [0, 1] for label in self.reference_network_data["label"]
-        )
-        # Assert that transcription factors of the reference network are subset of the transcription factor data
-        assert set(
-            self.reference_network_data["transcription_factor"].unique()
-        ).issubset(self.transcription_factor_data.unique())
 
     def _load_gene_expression_data(self) -> pd.Series:
         df = pd.read_csv(self.gene_expression_path, sep="\t")
-        return df
-
-    def _load_reference_network_data(self) -> pd.DataFrame:
-        df = pd.read_csv(self.reference_network_path, sep="\t")
-        assert list(df.columns) == [
-            "transcription_factor",
-            "target_gene",
-            "label",
-        ]
         return df
 
     def _load_transcription_factor_data(self) -> pd.DataFrame:
@@ -57,6 +38,15 @@ class GRNDataset:
         assert isinstance(series, pd.Series)
         series.name = "transcription_factor"
         return series
+
+    def _load_reference_network_data(self) -> pd.DataFrame:
+        df = pd.read_csv(self.reference_network_path, sep="\t")
+        assert list(df.columns) == [
+            "transcription_factor",
+            "target_gene",
+            "label",
+        ]
+        return df
 
 
 if __name__ == "__main__":

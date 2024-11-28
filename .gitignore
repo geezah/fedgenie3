@@ -1,4 +1,4 @@
-local_data/
 results/
 __pycache__
 credentials.conf
+*_data/
