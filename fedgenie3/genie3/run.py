@@ -4,7 +4,7 @@ from fedgenie3.data.processor import GRNProcessor
 from fedgenie3.genie3.modeling import GENIE3
 from fedgenie3.genie3.eval import evaluate
 
-def run(root : Path, network_id : int):
+def run(root : Path, network_id : int, dev_run : bool = False):
     print(f"Running (non-federated) GRN inference for network {network_id} in {root}")
     net_id_to_net_name = {
         1: "in-silico",
@@ -45,7 +45,7 @@ def run(root : Path, network_id : int):
     }
     genie3 = GENIE3(tree_method=tree_method, tree_init_kwargs=tree_init_kwargs)
 
-    importance_matrix = genie3.compute_importances(inputs, transcription_factor_indices, dev_run=False)
+    importance_matrix = genie3.compute_importances(inputs, transcription_factor_indices, dev_run=dev_run)
     gene_ranking_with_indices = genie3.rank_genes_by_importance(importance_matrix, transcription_factor_indices)
     gene_ranking_with_names = GRNProcessor.postprocess(gene_ranking_with_indices, grn_dataset.gene_expression_data)
     
