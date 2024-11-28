@@ -51,8 +51,8 @@ def evaluate(
     y_scores, y_true = _prepare_evaluation(predictions, gt)
     auroc_score = auroc(y_true, y_scores)
     auprc_score = auprc(y_true, y_scores)
-    auroc_p_value = auroc_permutation_test(auroc, y_true, y_scores)
-    auprc_p_value = auprc_permutation_test(auprc, y_true, y_scores)
+    auroc_p_value = auroc_permutation_test(y_true, y_scores)
+    auprc_p_value = auprc_permutation_test(y_true, y_scores)
     overall_score = combined_log_p_value(auroc_p_value, auprc_p_value)
 
     return {
