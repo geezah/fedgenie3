@@ -23,9 +23,7 @@ class GENIE3:
         elif self.tree_method == "ET":
             return ExtraTreesRegressor(**self.tree_init_kwargs)
         else:
-            raise ValueError(
-                "Invalid tree method. Choose between 'RF' and 'ET'"
-            )
+            raise ValueError("Invalid tree method. Choose between 'RF' and 'ET'")
 
     @staticmethod
     def _partition_data(
@@ -45,9 +43,7 @@ class GENIE3:
     def check_after_compute_importances(
         importance_matrix: NDArray,
     ) -> None:
-        assert np.all(
-            importance_matrix >= 0
-        ), "Importances must be non-negative"
+        assert np.all(importance_matrix >= 0), "Importances must be non-negative"
         assert np.allclose(
             importance_matrix.sum(axis=1), 1
         ), "Sum of importances assigned to regulator genes must be 1 for each target gene"
@@ -123,9 +119,7 @@ class GENIE3:
                 "importance": np.float64,
             }
         )
-        gene_rankings.sort_values(
-            by="importance", ascending=False, inplace=True
-        )
+        gene_rankings.sort_values(by="importance", ascending=False, inplace=True)
         gene_rankings.reset_index(drop=True, inplace=True)
         return gene_rankings
 

@@ -22,9 +22,7 @@ class GRNDataset:
             else None
         )
         self.reference_network_data = (
-            self._load_reference_network_data()
-            if reference_network_path
-            else None
+            self._load_reference_network_data() if reference_network_path else None
         )
 
     def _load_gene_expression_data(self) -> pd.Series:
@@ -32,9 +30,7 @@ class GRNDataset:
         return df
 
     def _load_transcription_factor_data(self) -> pd.DataFrame:
-        series = pd.read_csv(
-            self.transcription_factor_path, sep="\t"
-        ).squeeze()
+        series = pd.read_csv(self.transcription_factor_path, sep="\t").squeeze()
         assert isinstance(series, pd.Series)
         series.name = "transcription_factor"
         return series

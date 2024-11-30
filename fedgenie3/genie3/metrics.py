@@ -34,9 +34,7 @@ def permutation_test(
         float: P-value for the observed AUC scores.
     """
     # Input validation
-    if not isinstance(y_true, np.ndarray) or not isinstance(
-        y_scores, np.ndarray
-    ):
+    if not isinstance(y_true, np.ndarray) or not isinstance(y_scores, np.ndarray):
         raise TypeError(
             f"y_true and y_scores must be numpy arrays. Got {type(y_true)} and {type(y_scores)} respectively instead."
         )
@@ -67,14 +65,22 @@ def permutation_test(
     assert 0 < p_value <= 1, "P-value must be between 0 and 1"
     return p_value
 
-def auroc_permutation_test(y_true: NDArray, y_scores: NDArray, num_permutations: int = 1000) -> float:
+
+def auroc_permutation_test(
+    y_true: NDArray, y_scores: NDArray, num_permutations: int = 1000
+) -> float:
     return permutation_test(auroc, y_true, y_scores, num_permutations)
 
-def auprc_permutation_test(y_true: NDArray, y_scores: NDArray, num_permutations: int = 1000) -> float:
+
+def auprc_permutation_test(
+    y_true: NDArray, y_scores: NDArray, num_permutations: int = 1000
+) -> float:
     return permutation_test(auprc, y_true, y_scores, num_permutations)
+
 
 def combined_log_p_value(auroc_p: float, auprc_p: float) -> float:
     return -0.5 * np.log10(auroc_p * auprc_p)
+
 
 if __name__ == "__main__":
     y_true = np.array([0, 1, 1, 0, 1, 0, 1, 0, 1, 0])

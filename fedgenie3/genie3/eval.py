@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Dict, Tuple
 
 import pandas as pd
 from numpy.typing import NDArray
@@ -34,9 +34,7 @@ def _prepare_evaluation(
     return y_scores, y_true
 
 
-def evaluate(
-    predictions: pd.DataFrame, gt: pd.DataFrame
-) -> Tuple[float, float, float, float]:
+def evaluate(predictions: pd.DataFrame, gt: pd.DataFrame) -> Dict[str, float]:
     """
     Evaluate the predictions against the ground truth data.
 
