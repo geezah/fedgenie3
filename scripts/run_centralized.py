@@ -9,8 +9,9 @@ app = Typer(pretty_exceptions_show_locals=False)
 def main(
     root: Path = Path("local_data/processed/dream_five"),
     network_id: int = 1,
+    dev_run: bool = True,
 ):
-    run(root, network_id)
+    run(root, network_id, dev_run)
 
 
 if __name__ == "__main__":

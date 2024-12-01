@@ -1,79 +1,84 @@
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 
 
+@dataclass
 class GRNDataset:
-    def __init__(
-        self,
-        gene_expression_path: Path,
-        transcription_factor_path: Optional[Path] = None,
-        reference_network_path: Optional[Path] = None,
-    ):
-        self.gene_expression_path = gene_expression_path
-        self.transcription_factor_path = transcription_factor_path
-        self.reference_network_path = reference_network_path
-
-        self.gene_expression_data = self._load_gene_expression_data()
-        self.transcription_factor_data = (
-            self._load_transcription_factor_data()
-            if transcription_factor_path
-            else None
-        )
-        self.reference_network_data = (
-            self._load_reference_network_data() if reference_network_path else None
-        )
-
-    def _load_gene_expression_data(self) -> pd.Series:
-        df = pd.read_csv(self.gene_expression_path, sep="\t")
-        return df
-
-    def _load_transcription_factor_data(self) -> pd.DataFrame:
-        series = pd.read_csv(self.transcription_factor_path, sep="\t").squeeze()
-        assert isinstance(series, pd.Series)
-        series.name = "transcription_factor"
-        return series
-
-    def _load_reference_network_data(self) -> pd.DataFrame:
-        df = pd.read_csv(self.reference_network_path, sep="\t")
-        assert list(df.columns) == [
-            "transcription_factor",
-            "target_gene",
-            "label",
-        ]
-        return df
+    gene_expressions: pd.DataFrame
+    transcription_factors: pd.Series
+    reference_network: pd.DataFrame
 
 
-if __name__ == "__main__":
+def load_gene_expression_data(
+    gene_expression_path: Path,
+) -> pd.Series:
+    df = pd.read_csv(gene_expression_path, sep="\t")
+    return df
+
+
+def load_transcription_factor_data(
+    transcription_factor_path: Path,
+) -> pd.DataFrame:
+    series = pd.read_csv(transcription_factor_path, sep="\t").squeeze()
+    assert isinstance(series, pd.Series)
+    series.name = "transcription_factor"
+    return series
+
+
+def load_reference_network_data(reference_network_path: Path) -> pd.DataFrame:
+    df = pd.read_csv(reference_network_path, sep="\t")
+    assert list(df.columns) == [
+        "transcription_factor",
+        "target_gene",
+        "label",
+    ]
+    return df
+
+
+def construct_grn_dataset(
+    gene_expression_path: Path,
+    transcription_factor_path: Path,
+    reference_network_path: Path,
+) -> GRNDataset:
+    gene_expressions = load_gene_expression_data(gene_expression_path)
+    transcription_factors = load_transcription_factor_data(
+        transcription_factor_path
+    )
+    reference_network = load_reference_network_data(reference_network_path)
+    return GRNDataset(
+        gene_expressions=gene_expressions,
+        transcription_factors=transcription_factors,
+        reference_network=reference_network,
+    )
+
+
+def load_dream_five(root: Path, net_id: int) -> GRNDataset:
     net_id_to_net_name = {
         1: "in-silico",
         3: "e-coli",
         4: "s-cerevisiae",
     }
-    NETWORK_ID = 4
-
-    net_id = NETWORK_ID
-    net_name = net_id_to_net_name[NETWORK_ID]
-    PROCESSED_DATA_ROOT = Path("local_data/processed/dream_five")
+    network_name = net_id_to_net_name[net_id]
     GENE_EXPRESSION_PATH = (
-        PROCESSED_DATA_ROOT
-        / f"net{net_id}_{net_name}"
-        / f"net{net_id}_{net_name}_expression_data.tsv"
+        root / f"net{net_id}_{network_name}" / "gene_expression_data.tsv"
     )
     REFERENCE_NETWORK_PATH = (
-        PROCESSED_DATA_ROOT
-        / f"net{net_id}_{net_name}"
-        / f"net{net_id}_{net_name}_reference_network_data.tsv"
+        root / f"net{net_id}_{network_name}" / "reference_network_data.tsv"
     )
     TRANSCRIPTION_FACTOR_PATH = (
-        PROCESSED_DATA_ROOT
-        / f"net{net_id}_{net_name}"
-        / f"net{net_id}_{net_name}_transcription_factors.tsv"
+        root / f"net{net_id}_{network_name}" / "transcription_factors.tsv"
     )
 
-    grn_dataset = GRNDataset(
+    grn_dataset = construct_grn_dataset(
         gene_expression_path=GENE_EXPRESSION_PATH,
-        reference_network_path=REFERENCE_NETWORK_PATH,
         transcription_factor_path=TRANSCRIPTION_FACTOR_PATH,
+        reference_network_path=REFERENCE_NETWORK_PATH,
     )
+    return grn_dataset
+
+
+if __name__ == "__main__":
+    grn_dataset = load_dream_five(Path("local_data/processed/dream_five"), 1)
+    print(grn_dataset.gene_expressions.head())

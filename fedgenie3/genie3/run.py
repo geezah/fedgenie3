@@ -1,12 +1,14 @@
 from pathlib import Path
-from fedgenie3.data.dataset import GRNDataset
-from fedgenie3.data.processor import GRNProcessor
+from fedgenie3.data.dataset import construct_grn_dataset
+from fedgenie3.data.processing import preprocess, postprocess
 from fedgenie3.genie3.modeling import GENIE3
 from fedgenie3.genie3.eval import evaluate
 
 
 def run(root: Path, network_id: int, dev_run: bool = False):
-    print(f"Running (non-federated) GRN inference for network {network_id} in {root}")
+    print(
+        f"Running (non-federated) GRN inference for network {network_id} in {root}"
+    )
     net_id_to_net_name = {
         1: "in-silico",
         3: "e-coli",
@@ -23,14 +25,14 @@ def run(root: Path, network_id: int, dev_run: bool = False):
         root / f"net{network_id}_{network_name}" / "transcription_factors.tsv"
     )
 
-    grn_dataset = GRNDataset(
+    grn_dataset = construct_grn_dataset(
         gene_expression_path=GENE_EXPRESSION_PATH,
         reference_network_path=REFERENCE_NETWORK_PATH,
         transcription_factor_path=TRANSCRIPTION_FACTOR_PATH,
     )
 
-    inputs, transcription_factor_indices = GRNProcessor.preprocess(
-        grn_dataset.gene_expression_data, grn_dataset.transcription_factor_data
+    inputs, transcription_factor_indices = preprocess(
+        grn_dataset.gene_expressions, grn_dataset.transcription_factors
     )
 
     tree_method = "RF"
@@ -48,9 +50,9 @@ def run(root: Path, network_id: int, dev_run: bool = False):
     gene_ranking_with_indices = genie3.rank_genes_by_importance(
         importance_matrix, transcription_factor_indices
     )
-    gene_ranking_with_names = GRNProcessor.postprocess(
-        gene_ranking_with_indices, grn_dataset.gene_expression_data
+    gene_ranking_with_names = postprocess(
+        gene_ranking_with_indices, grn_dataset.gene_expressions
     )
 
-    results = evaluate(gene_ranking_with_names, grn_dataset.reference_network_data)
+    results = evaluate(gene_ranking_with_names, grn_dataset.reference_network)
     print(results)

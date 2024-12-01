@@ -34,7 +34,9 @@ def permutation_test(
         float: P-value for the observed AUC scores.
     """
     # Input validation
-    if not isinstance(y_true, np.ndarray) or not isinstance(y_scores, np.ndarray):
+    if not isinstance(y_true, np.ndarray) or not isinstance(
+        y_scores, np.ndarray
+    ):
         raise TypeError(
             f"y_true and y_scores must be numpy arrays. Got {type(y_true)} and {type(y_scores)} respectively instead."
         )
