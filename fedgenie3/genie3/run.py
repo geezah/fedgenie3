@@ -1,39 +1,15 @@
 from pathlib import Path
-from fedgenie3.data.dataset import construct_grn_dataset
-from fedgenie3.data.processing import preprocess, postprocess
-from fedgenie3.genie3.modeling import GENIE3
+
+from fedgenie3.data.dataset import load_dream_five
 from fedgenie3.genie3.eval import evaluate
+from fedgenie3.genie3.modeling import GENIE3
 
 
 def run(root: Path, network_id: int, dev_run: bool = False):
     print(
         f"Running (non-federated) GRN inference for network {network_id} in {root}"
     )
-    net_id_to_net_name = {
-        1: "in-silico",
-        3: "e-coli",
-        4: "s-cerevisiae",
-    }
-    network_name = net_id_to_net_name[network_id]
-    GENE_EXPRESSION_PATH = (
-        root / f"net{network_id}_{network_name}" / "gene_expression_data.tsv"
-    )
-    REFERENCE_NETWORK_PATH = (
-        root / f"net{network_id}_{network_name}" / "reference_network_data.tsv"
-    )
-    TRANSCRIPTION_FACTOR_PATH = (
-        root / f"net{network_id}_{network_name}" / "transcription_factors.tsv"
-    )
-
-    grn_dataset = construct_grn_dataset(
-        gene_expression_path=GENE_EXPRESSION_PATH,
-        reference_network_path=REFERENCE_NETWORK_PATH,
-        transcription_factor_path=TRANSCRIPTION_FACTOR_PATH,
-    )
-
-    inputs, transcription_factor_indices = preprocess(
-        grn_dataset.gene_expressions, grn_dataset.transcription_factors
-    )
+    grn_dataset = load_dream_five(root, network_id)
 
     tree_method = "RF"
     tree_init_kwargs = {
@@ -43,16 +19,16 @@ def run(root: Path, network_id: int, dev_run: bool = False):
         "n_jobs": -1,
     }
     genie3 = GENIE3(tree_method=tree_method, tree_init_kwargs=tree_init_kwargs)
-
-    importance_matrix = genie3.compute_importances(
-        inputs, transcription_factor_indices, dev_run=dev_run
+    importance_matrix = genie3.calculate_importances(
+        grn_dataset.gene_expressions.values,
+        grn_dataset.metadata.transcription_factor_indices.to_list(),
+        dev_run=dev_run,
     )
-    gene_ranking_with_indices = genie3.rank_genes_by_importance(
-        importance_matrix, transcription_factor_indices
+    gene_ranking_with_indices = GENIE3.rank_genes_by_importance(
+        importance_matrix, grn_dataset.metadata.transcription_factor_indices
     )
-    gene_ranking_with_names = postprocess(
-        gene_ranking_with_indices, grn_dataset.gene_expressions
+    gene_ranking_with_names = GENIE3.map_indices_to_gene_names(
+        gene_ranking_with_indices, grn_dataset.metadata.gene_names_to_indices
     )
-
     results = evaluate(gene_ranking_with_names, grn_dataset.reference_network)
     print(results)

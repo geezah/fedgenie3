@@ -31,7 +31,7 @@ def _map_gene_ids_to_names_for_transcription_factors(
     return transcription_factors
 
 
-def init_dream_five_dataset(root: Path, network_id: Literal[1, 3, 4]) -> None:
+def _preprocess_dream_five(root: Path, network_id: Literal[1, 3, 4]) -> None:
     network_id_to_directory_name = {
         1: Path("Network 1 - in silico"),
         # 2: Path("Network 2 - S. aureus"), # Not used for evaluation
@@ -62,7 +62,7 @@ def init_dream_five_dataset(root: Path, network_id: Literal[1, 3, 4]) -> None:
         / f"DREAM5_NetworkInference_GoldStandard_{str(network_dir).replace(f'Network {network_id}', f'Network{network_id}')}.tsv"
     )
 
-    gene_expression_data = pd.read_csv(
+    gene_expressions = pd.read_csv(
         gene_expression_path,
         sep="\t",
         dtype=np.float32,
@@ -73,14 +73,14 @@ def init_dream_five_dataset(root: Path, network_id: Literal[1, 3, 4]) -> None:
         dtype=str,
     )
     id_to_name_mapping = dict(id_to_name_mapping.values)
-    transcription_factor_data = pd.read_csv(
+    transcription_factors = pd.read_csv(
         transcription_factors_path,
         sep="\t",
         header=None,
         dtype=str,
     )
 
-    reference_network_data = pd.read_csv(
+    reference_network = pd.read_csv(
         network_data_path,
         sep="\t",
         header=None,
@@ -91,30 +91,32 @@ def init_dream_five_dataset(root: Path, network_id: Literal[1, 3, 4]) -> None:
         },
     )
 
-    reference_network_data.columns = [
+    reference_network.columns = [
         "transcription_factor",
         "target_gene",
         "label",
     ]
-    transcription_factor_data = transcription_factor_data[0]
-    transcription_factor_data.name = "transcription_factor"
+    transcription_factors = transcription_factors[0]
+    transcription_factors.name = "transcription_factor"
 
-    gene_expression_data = _map_gene_ids_to_names_for_expression_data(
-        gene_expression_data, id_to_name_mapping
+    gene_expressions = _map_gene_ids_to_names_for_expression_data(
+        gene_expressions, id_to_name_mapping
     )
-    reference_network_data = _map_gene_ids_to_names_for_network_data(
-        reference_network_data, id_to_name_mapping
+    reference_network = _map_gene_ids_to_names_for_network_data(
+        reference_network, id_to_name_mapping
     )
-    transcription_factor_data = (
-        _map_gene_ids_to_names_for_transcription_factors(
-            transcription_factor_data, id_to_name_mapping
-        )
+    transcription_factors = _map_gene_ids_to_names_for_transcription_factors(
+        transcription_factors, id_to_name_mapping
+    )
+    indices_to_names = pd.Series(
+        gene_expressions.columns.to_list(), name="gene_name"
     )
 
     return (
-        gene_expression_data,
-        reference_network_data,
-        transcription_factor_data,
+        gene_expressions,
+        reference_network,
+        transcription_factors,
+        indices_to_names,
     )
 
 
@@ -146,7 +148,8 @@ def preprocess_dream_five(
             gene_expression_data,
             reference_network_data,
             transcription_factor_data,
-        ) = init_dream_five_dataset(raw_data_root, net_id)
+            indices_to_names,
+        ) = _preprocess_dream_five(raw_data_root, net_id)
         # Save data
         gene_expression_data.to_csv(
             net_dir / "gene_expression_data.tsv",
@@ -161,5 +164,10 @@ def preprocess_dream_five(
         transcription_factor_data.to_csv(
             net_dir / "transcription_factors.tsv",
             index=False,
+            sep="\t",
+        )
+        indices_to_names.to_csv(
+            net_dir / "indices_to_names.tsv",
+            index=True,
             sep="\t",
         )

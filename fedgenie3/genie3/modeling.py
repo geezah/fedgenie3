@@ -17,7 +17,7 @@ class GENIE3:
         self.tree_method = tree_method
         self.tree_init_kwargs = tree_init_kwargs
 
-    def _init_model(self) -> ForestRegressor:
+    def _initialize_regressor(self) -> ForestRegressor:
         if self.tree_method == "RF":
             return RandomForestRegressor(**self.tree_init_kwargs)
         elif self.tree_method == "ET":
@@ -41,7 +41,7 @@ class GENIE3:
         y = gene_expressions[:, target_gene_idx]
         return X, y, input_gene_indices
 
-    def compute_importances(
+    def calculate_importances(
         self,
         gene_expressions: NDArray[np.float32],
         indices_of_candidate_regulators: List[int],
@@ -59,7 +59,7 @@ class GENIE3:
             unit="gene",
         )
         for target_gene_index in progress_bar:
-            forest_regressor = self._init_model()
+            forest_regressor = self._initialize_regressor()
             X, y, input_gene_indices = GENIE3._partition_data(
                 gene_expressions,
                 target_gene_index,
@@ -127,12 +127,25 @@ class GENIE3:
         gene_rankings = GENIE3._convert_to_dataframe(gene_rankings)
         return gene_rankings
 
+    @staticmethod
+    def map_indices_to_gene_names(
+        rankings: pd.DataFrame,
+        indices_to_gene_names: Dict[int, str],
+    ) -> pd.DataFrame:
+        rankings["transcription_factor"] = rankings[
+            "transcription_factor"
+        ].apply(lambda i: indices_to_gene_names[i])
+        rankings["target_gene"] = rankings["target_gene"].apply(
+            lambda i: indices_to_gene_names[i]
+        )
+        return rankings
+
     def run(
         self,
         gene_expressions: NDArray[np.float32],
         indices_of_candidate_regulators: List[int],
     ) -> pd.DataFrame:
-        importance_matrix = self.compute_importances(
+        importance_matrix = self.calculate_importances(
             gene_expressions, indices_of_candidate_regulators
         )
         gene_rankings = GENIE3.rank_genes_by_importance(
