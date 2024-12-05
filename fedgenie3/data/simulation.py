@@ -81,10 +81,14 @@ def _split_tf_centric(
         gene_expression_partition: npt.NDArray[np.float64] = (
             gene_expression_inputs[indices_partition, :]
         )
-        dataset_partition = deepcopy(dataset)
-        dataset_partition.gene_expressions.values = gene_expression_partition
-        dataset_partition.transcription_factors = dataset.transcription_factors
-        dataset_partition.reference_network = dataset.reference_network
+        dataset_partition = GRNDataset(
+            gene_expressions=pd.DataFrame(
+                gene_expression_partition,
+                columns=dataset.gene_expressions.columns,
+            ),
+            reference_network=dataset.reference_network,
+            metadata=dataset.metadata,
+        )
         dataset_partitions.append(dataset_partition)
 
     return dataset_partitions
@@ -154,4 +158,6 @@ if __name__ == "__main__":
         root, network_id, simulation_type, num_partitions, random_seed
     )
     for i, dataset in enumerate(dataset_partitions):
-        print(f"Partition {i}: {dataset.gene_expressions.head()}")
+        print(f"Expressions {i}: {dataset.gene_expressions.head()}")
+        print(f"Reference Network {i}: {dataset.reference_network.head()}")
+        print(f"Metadata {i}: {dataset.metadata}")

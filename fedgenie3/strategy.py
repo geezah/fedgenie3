@@ -18,7 +18,7 @@ from fedgenie3.data.dataset import (
     construct_grn_metadata,
     load_reference_network_data,
 )
-from fedgenie3.genie3.eval import evaluate as evaluate_ranking
+from fedgenie3.genie3.eval import evaluate_ranking as evaluate_ranking
 from fedgenie3.genie3.modeling import GENIE3
 
 

@@ -3,8 +3,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor
-from sklearn.ensemble._forest import ForestRegressor
+from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor, GradientBoostingRegressor
 from tqdm.auto import tqdm
 
 
@@ -17,14 +16,16 @@ class GENIE3:
         self.tree_method = tree_method
         self.tree_init_kwargs = tree_init_kwargs
 
-    def _initialize_regressor(self) -> ForestRegressor:
+    def _initialize_regressor(self):
         if self.tree_method == "RF":
             return RandomForestRegressor(**self.tree_init_kwargs)
         elif self.tree_method == "ET":
             return ExtraTreesRegressor(**self.tree_init_kwargs)
+        elif self.tree_method == "GBDT":
+            return GradientBoostingRegressor(**self.tree_init_kwargs)
         else:
             raise ValueError(
-                "Invalid tree method. Choose between 'RF' and 'ET'"
+                "Invalid tree method. Choose between: ['RF', 'ET', GBDT']"
             )
 
     @staticmethod
@@ -59,16 +60,15 @@ class GENIE3:
             unit="gene",
         )
         for target_gene_index in progress_bar:
-            forest_regressor = self._initialize_regressor()
+            regressor = self._initialize_regressor()
             X, y, input_gene_indices = GENIE3._partition_data(
                 gene_expressions,
                 target_gene_index,
                 indices_of_candidate_regulators,
             )
-            forest_regressor.fit(X, y)
-            # TODO: Permutation Importance instead of impurity-based? Challenge: Limited sample size
+            regressor.fit(X, y)
             importance_matrix[target_gene_index, input_gene_indices] = (
-                forest_regressor.feature_importances_
+                regressor.feature_importances_
             )
             if dev_run:
                 break

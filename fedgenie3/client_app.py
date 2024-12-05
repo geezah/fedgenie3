@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 from flwr.client import ClientApp, NumPyClient
@@ -6,6 +5,7 @@ from flwr.common import Context, NDArrays, Scalar
 
 from fedgenie3.data.dataset import GRNDataset
 from fedgenie3.data.simulation import simulate_dream_five
+from fedgenie3.genie3.eval import evaluate_ranking
 from fedgenie3.genie3.modeling import GENIE3
 
 
@@ -13,24 +13,45 @@ class GENIE3Client(NumPyClient):
     def __init__(self, dataset: GRNDataset):
         self.dataset = dataset
         self.model = GENIE3(
-            tree_method="RF", tree_init_kwargs={"n_estimators": 50}
+            tree_method="GBDT",
+            tree_init_kwargs={
+                "n_estimators": 1000,
+                "learning_rate" : 0.1,
+                "max_features" : "sqrt",
+                "random_state": 42,
+                "n_iter_no_change": 10,
+            }
         )
+        self.importance_matrix = None
 
     def fit(
         self, parameters: NDArrays, config: dict[str, Scalar]
     ) -> tuple[NDArrays, int, dict[str, Scalar]]:
-        transcription_factor_indices = json.loads(
-            config["transcription_factor_indices"]
-        )
         importance_matrix = self.model.calculate_importances(
             self.dataset.gene_expressions.values,
-            transcription_factor_indices,
+            self.dataset.metadata.transcription_factor_indices,
         )
+        self.importance_matrix = importance_matrix
         return (
             [importance_matrix],
             len(self.dataset.gene_expressions.values),
             {},
         )
+
+    def evaluate(
+        self, parameters: NDArrays, config: dict[str, Scalar]
+    ) -> tuple[float, int, dict[str, Scalar]]:
+        gene_ranking_with_indices = GENIE3.rank_genes_by_importance(
+            self.importance_matrix,
+            self.dataset.metadata.transcription_factor_indices,
+        )
+        gene_ranking_with_names = GENIE3.map_indices_to_gene_names(
+            gene_ranking_with_indices, self.metadata.gene_names_to_indices
+        )
+        evaluation_results = evaluate_ranking(
+            gene_ranking_with_names, self.dataset.reference_network
+        )
+        return 0.0, evaluation_results
 
 
 def client_fn(context: Context):
@@ -52,7 +73,7 @@ def client_fn_simulation(context: Context):
     root = Path("local_data/processed/dream_five")
     network_id = 1
     random_seed = 42
-    simulation_type = "even"
+    simulation_type = "tf_centric"
 
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
