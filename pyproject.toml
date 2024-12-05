@@ -8,6 +8,7 @@ dependencies = [
     "scikit-learn~=1.5.2",
     "typer~=0.12.5",
     "pandas[performance]~=2.2.3",
+    "flwr[simulation]>=1.13.1",
 ]
 
 [build-system]

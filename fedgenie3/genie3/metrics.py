@@ -64,7 +64,6 @@ def permutation_test(
     # Calculate p-value based on the alternative hypothesis
     p_value = np.sum(permuted_scores >= observed_score) / num_permutations
 
-    assert 0 < p_value <= 1, "P-value must be between 0 and 1"
     return p_value
 
 
