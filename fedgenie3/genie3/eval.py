@@ -34,7 +34,9 @@ def _prepare_evaluation(
     return y_scores, y_true
 
 
-def evaluate_ranking(predictions: pd.DataFrame, gt: pd.DataFrame) -> Dict[str, float]:
+def evaluate_ranking(
+    predictions: pd.DataFrame, gt: pd.DataFrame
+) -> Dict[str, float]:
     """
     Evaluate the predictions against the ground truth data.
 
@@ -44,18 +46,8 @@ def evaluate_ranking(predictions: pd.DataFrame, gt: pd.DataFrame) -> Dict[str, f
         gt (pd.DataFrame): Ground truth data
 
     Returns:
-        Tuple[float, float, float, float]: Tuple containing AUPR, AUPR p-value, AUROC, and AUROC p-value
+        Dict[str, float]: Dict containing AUROC score
     """
     y_scores, y_true = _prepare_evaluation(predictions, gt)
     auroc_score = auroc(y_true, y_scores)
-    auprc_score = auprc(y_true, y_scores)
-    auroc_p_value = auroc_permutation_test(y_true, y_scores)
-    auprc_p_value = auprc_permutation_test(y_true, y_scores)
-    overall_score = combined_log_p_value(auroc_p_value, auprc_p_value)
-    return {
-        "auroc": auroc_score,
-        "aupr": auprc_score,
-        "auroc_p_value": auroc_p_value,
-        "auprc_p_value": auprc_p_value,
-        "overall_score": overall_score,
-    }
+    return {"auroc": auroc_score}
