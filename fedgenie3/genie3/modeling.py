@@ -3,30 +3,22 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor, GradientBoostingRegressor
 from tqdm.auto import tqdm
+
+from fedgenie3.genie3.interfaces import (
+    compute_importance_scores,
+    initialize_regressor,
+)
 
 
 class GENIE3:
     def __init__(
         self,
-        tree_method: str = "RF",
-        tree_init_kwargs: Dict[str, Any] = {},
+        regressor_type: str = "RF",
+        regressor_init_params: Dict[str, Any] = {},
     ):
-        self.tree_method = tree_method
-        self.tree_init_kwargs = tree_init_kwargs
-
-    def _initialize_regressor(self):
-        if self.tree_method == "RF":
-            return RandomForestRegressor(**self.tree_init_kwargs)
-        elif self.tree_method == "ET":
-            return ExtraTreesRegressor(**self.tree_init_kwargs)
-        elif self.tree_method == "GBDT":
-            return GradientBoostingRegressor(**self.tree_init_kwargs)
-        else:
-            raise ValueError(
-                "Invalid tree method. Choose between: ['RF', 'ET', GBDT']"
-            )
+        self.regressor_type = regressor_type
+        self.regressor_init_params = regressor_init_params
 
     @staticmethod
     def _partition_data(
@@ -60,15 +52,17 @@ class GENIE3:
             unit="gene",
         )
         for target_gene_index in progress_bar:
-            regressor = self._initialize_regressor()
+            regressor = initialize_regressor(
+                self.regressor_type, self.regressor_init_params
+            )
             X, y, input_gene_indices = GENIE3._partition_data(
                 gene_expressions,
                 target_gene_index,
                 indices_of_candidate_regulators,
             )
-            regressor.fit(X, y)
+            feature_importances = compute_importance_scores(X, y, regressor)
             importance_matrix[target_gene_index, input_gene_indices] = (
-                regressor.feature_importances_
+                feature_importances
             )
             if dev_run:
                 break

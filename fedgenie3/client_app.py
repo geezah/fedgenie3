@@ -5,6 +5,7 @@ from flwr.common import Context, NDArrays, Scalar
 
 from fedgenie3.data.dataset import GRNDataset
 from fedgenie3.data.simulation import simulate_dream_five
+from fedgenie3.genie3.configs import get_regressor_init_params
 from fedgenie3.genie3.eval import evaluate_ranking
 from fedgenie3.genie3.modeling import GENIE3
 
@@ -12,15 +13,13 @@ from fedgenie3.genie3.modeling import GENIE3
 class GENIE3Client(NumPyClient):
     def __init__(self, dataset: GRNDataset):
         self.dataset = dataset
+        self.regressor_type = "LGBM"
+        self.regressor_init_params = get_regressor_init_params(
+            self.regressor_type
+        )
         self.model = GENIE3(
-            tree_method="GBDT",
-            tree_init_kwargs={
-                "n_estimators": 1000,
-                "learning_rate" : 0.1,
-                "max_features" : "sqrt",
-                "random_state": 42,
-                "n_iter_no_change": 10,
-            }
+            regressor_type=self.regressor_type,
+            regressor_init_params=self.regressor_init_params,
         )
         self.importance_matrix = None
 
@@ -73,7 +72,7 @@ def client_fn_simulation(context: Context):
     root = Path("local_data/processed/dream_five")
     network_id = 1
     random_seed = 42
-    simulation_type = "tf_centric"
+    simulation_type = "even"
 
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
