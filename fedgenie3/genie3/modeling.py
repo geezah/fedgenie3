@@ -133,20 +133,3 @@ class GENIE3:
             lambda i: indices_to_gene_names[i]
         )
         return rankings
-
-    def run(
-        self,
-        gene_expressions: NDArray[np.float32],
-        indices_of_candidate_regulators: List[int],
-    ) -> pd.DataFrame:
-        importance_matrix = self.calculate_importances(
-            gene_expressions, indices_of_candidate_regulators
-        )
-        gene_rankings = GENIE3.rank_genes_by_importance(
-            importance_matrix, indices_of_candidate_regulators
-        )
-        return gene_rankings
-
-
-if __name__ == "__main__":
-    pass
