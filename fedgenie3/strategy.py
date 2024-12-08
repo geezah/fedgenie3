@@ -4,15 +4,18 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 from flwr.common import (
+    EvaluateIns,
+    EvaluateRes,
     FitIns,
     FitRes,
     Parameters,
     Scalar,
     parameters_to_ndarrays,
+    ndarrays_to_parameters,
 )
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
-from flwr.server.strategy import FedAvg
+from flwr.server.strategy import Strategy
 
 from fedgenie3.data.dataset import (
     construct_grn_metadata,
@@ -22,7 +25,7 @@ from fedgenie3.genie3.eval import evaluate_ranking as evaluate_ranking
 from fedgenie3.genie3.modeling import GENIE3
 
 
-class GENIE3Strategy(FedAvg):
+class GENIE3Strategy(Strategy):
     def __init__(
         self,
         reference_network_path: Path,
@@ -37,6 +40,12 @@ class GENIE3Strategy(FedAvg):
             reference_network_path
         )
 
+    def initialize_parameters(
+        self, client_manager: ClientManager
+    ) -> Optional[Parameters]:
+        """Initialize the (global) model parameters."""
+        return None
+
     def configure_fit(
         self,
         server_round: int,
@@ -44,14 +53,17 @@ class GENIE3Strategy(FedAvg):
         client_manager: ClientManager,
     ) -> List[Tuple[ClientProxy, FitIns]]:
         """Configure the next round of training."""
-        client_instructions = super().configure_fit(
-            server_round, parameters, client_manager
+        """Configure the next round of training."""
+        config = {}
+        transcription_factor_indices: List[int] = json.dumps(
+            self.metadata.transcription_factor_indices.to_list()
         )
-        for _, fit_ins in client_instructions:
-            fit_ins.config["transcription_factor_indices"] = json.dumps(
-                self.metadata.transcription_factor_indices.to_list()
-            )
-        return client_instructions
+        config.update(
+            {"transcription_factor_indices": transcription_factor_indices}
+        )
+        fit_ins = FitIns(parameters, config)
+        clients: List[ClientProxy] = client_manager.all().values()
+        return [(client, fit_ins) for client in clients]
 
     def aggregate_fit(
         self,
@@ -60,12 +72,6 @@ class GENIE3Strategy(FedAvg):
         failures: list[Union[tuple[ClientProxy, FitRes], BaseException]],
     ) -> tuple[Optional[Parameters], dict[str, Scalar]]:
         print(f"Aggregating results for round {server_round}...")
-        if not results:
-            return None, {}
-        # Do not aggregate if there are failures and failures are not accepted
-        if not self.accept_failures and failures:
-            return None, {}
-
         importance_matrices = []
         sample_sizes = []
         for _, fit_res in results:
@@ -78,7 +84,37 @@ class GENIE3Strategy(FedAvg):
             importance_matrices, sample_sizes
         )
         self.global_importance_matrix = aggregated_importance_matrix
-        return [], {}
+        return importance_matrices, {}
+
+    def configure_evaluate(
+        self,
+        server_round: int,
+        parameters: Parameters,
+        client_manager: ClientManager,
+    ) -> List[Tuple[ClientProxy, EvaluateIns]]:
+        """Configure the next round of evaluation."""
+        clients = list(client_manager.all().values())
+        eval_instructions = []
+        for idx in range(len(clients)):
+            importances: Parameters = ndarrays_to_parameters([parameters[idx]])
+            instruction = EvaluateIns(importances, {})
+            eval_instructions.append((clients[idx], instruction))
+        return eval_instructions
+
+    def aggregate_evaluate(
+        self,
+        server_round: int,
+        results: List[Tuple[ClientProxy, EvaluateRes]],
+        failures: List[Union[Tuple[ClientProxy, EvaluateRes], BaseException]],
+    ) -> Tuple[Optional[float], dict[str, Scalar]]:
+        print(f"Aggregating evaluation results for round {server_round}...")
+        num_clients = len(results)
+        cumulated_auroc = 0.0
+        for _, evaluate_res in results:
+            metrics = evaluate_res.metrics
+            cumulated_auroc += metrics["auroc"]
+        average_auroc = cumulated_auroc / num_clients
+        return 0.0, {"auroc": average_auroc}
 
     def evaluate(
         self, server_round: int, parameters: Parameters
@@ -113,8 +149,3 @@ class GENIE3Strategy(FedAvg):
             stacked_importances, axis=0, weights=sample_weights
         )
         return average_importances
-
-    # TODO: Implement this method when implementing inverse variance weighting
-    @staticmethod
-    def _normalize_importances(importance_matrix: np.ndarray) -> np.ndarray:
-        pass

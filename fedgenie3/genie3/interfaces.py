@@ -35,6 +35,7 @@ def compute_importance_scores(
     else:
         raise ValueError("Invalid regressor type")
 
+
 def _compute_importance_scores_lgbm(
     X: NDArray,
     y: NDArray,

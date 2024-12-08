@@ -32,7 +32,7 @@ def get_strategy_config(root: Path, network_id: int) -> Dict[str, Any]:
     return node_config
 
 
-def server_fn(context: Context):
+def server_fn_simulation(context: Context):
     server_config = ServerConfig(num_rounds=1)
     root = Path("local_data/processed/dream_five").resolve()
     network_id = 1
@@ -45,4 +45,14 @@ def server_fn(context: Context):
     return ServerAppComponents(strategy=strategy, config=server_config)
 
 
-server_app = ServerApp(server_fn=server_fn)
+def server_fn(context: Context):
+    server_config = ServerConfig(num_rounds=context.run_config["num_rounds"])
+    strategy = GENIE3Strategy(
+        context.run_config["reference_network_path"],
+        context.run_config["transcription_factors_path"],
+        context.run_config["indices_to_names_path"],
+    )
+    return ServerAppComponents(strategy=strategy, config=server_config)
+
+
+server_app = ServerApp(server_fn=server_fn_simulation)

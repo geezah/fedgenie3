@@ -3,13 +3,7 @@ from typing import Dict, Tuple
 import pandas as pd
 from numpy.typing import NDArray
 
-from fedgenie3.genie3.metrics import (
-    auprc,
-    auprc_permutation_test,
-    auroc,
-    auroc_permutation_test,
-    combined_log_p_value,
-)
+from fedgenie3.genie3.metrics import compute_auroc
 
 
 def _prepare_evaluation(
@@ -49,5 +43,5 @@ def evaluate_ranking(
         Dict[str, float]: Dict containing AUROC score
     """
     y_scores, y_true = _prepare_evaluation(predictions, gt)
-    auroc_score = auroc(y_true, y_scores)
-    return {"auroc": auroc_score}
+    auroc = compute_auroc(y_true, y_scores)
+    return {"auroc": auroc}
