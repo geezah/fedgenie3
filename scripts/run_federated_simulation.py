@@ -9,9 +9,8 @@ app = Typer(pretty_exceptions_show_locals=False)
 
 @app.command()
 def main(num_clients: int):
-    num_cpus = 8
     backend_config = {
-        "client_resources": {"num_cpus": num_cpus, "num_gpus": 0.0}
+        "client_resources": {"num_cpus": 1, "num_gpus": 0.0}
     }
     # Run simulation
     run_simulation(

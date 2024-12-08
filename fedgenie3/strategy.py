@@ -10,12 +10,13 @@ from flwr.common import (
     FitRes,
     Parameters,
     Scalar,
-    parameters_to_ndarrays,
     ndarrays_to_parameters,
+    parameters_to_ndarrays,
 )
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
+from numpy.typing import NDArray
 
 from fedgenie3.data.dataset import (
     construct_grn_metadata,
@@ -135,8 +136,8 @@ class GENIE3Strategy(Strategy):
         return 0.0, evaluation_results
 
     def _aggregate_importance_matrices(
-        self, importance_matrices: List[np.ndarray], sample_sizes: List[int]
-    ) -> np.ndarray:
+        self, importance_matrices: List[NDArray], sample_sizes: List[int]
+    ) -> NDArray:
         # Convert sample sizes to weights
         total_samples = sum(sample_sizes)
         sample_weights = np.array(sample_sizes) / total_samples
