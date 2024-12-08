@@ -34,7 +34,6 @@ class GENIE3Client(NumPyClient):
         importances: NDArray = self.model.calculate_importances(
             self.dataset.gene_expressions.values,
             self.dataset.metadata.transcription_factor_indices,
-            dev_run=True,
         )
         self.importances = importances
         return (
