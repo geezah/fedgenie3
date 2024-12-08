@@ -20,6 +20,7 @@ def run(root: Path, network_id: int, dev_run: bool = False):
     importance_matrix = genie3.calculate_importances(
         grn_dataset.gene_expressions.values,
         grn_dataset.metadata.transcription_factor_indices.to_list(),
+        dev_run=dev_run
     )
     gene_ranking_with_indices = GENIE3.rank_genes_by_importance(
         importance_matrix, grn_dataset.metadata.transcription_factor_indices
