@@ -20,9 +20,9 @@ def compute_p_value(
     Calculate the p-value for the observed AUC scores being greater than random AUC scores using permutation testing.
 
     Args:
-        metric (Callable[[np.ndarray, np.ndarray], float]): Metric function to calculate AUC with.
-        y_true (np.ndarray): Ground truth labels.
-        y_scores (np.ndarray): Predicted scores.
+        metric (Callable[[NDArray, NDArray], float]): Metric function to calculate AUC with.
+        y_true (NDArray): Ground truth labels.
+        y_scores (NDArray): Predicted scores.
         num_permutations (int): Number of permutations to perform.
 
     Returns:
