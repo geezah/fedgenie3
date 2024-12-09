@@ -10,18 +10,16 @@ from sklearn.ensemble._forest import ForestRegressor
 from sklearn.model_selection import train_test_split
 
 
-def initialize_regressor(
-    regressor_type: str, regressor_init_params: Dict[str, Any]
-):
-    if regressor_type == "RF":
-        return RandomForestRegressor(**regressor_init_params)
-    elif regressor_type == "ET":
-        return ExtraTreesRegressor(**regressor_init_params)
-    elif regressor_type == "LGBM":
-        return lgb.LGBMRegressor(**regressor_init_params)
+def initialize_regressor(name: str, init_params: Dict[str, Any]):
+    if name == "RF":
+        return RandomForestRegressor(**init_params)
+    elif name == "ET":
+        return ExtraTreesRegressor(**init_params)
+    elif name == "LGBM":
+        return lgb.LGBMRegressor(**init_params)
     else:
         raise ValueError(
-            "Invalid tree method. Choose between: ['RF', 'ET', 'GBDT', 'LGBM']"
+            "Invalid tree method. Choose between: ['RF', 'ET', 'LGBM']"
         )
 
 

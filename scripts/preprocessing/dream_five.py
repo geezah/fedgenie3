@@ -4,6 +4,7 @@ from typing import Dict, Literal
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from typer import Typer
 
 
 def _map_gene_ids_to_names_for_expression_data(
@@ -171,3 +172,20 @@ def preprocess_dream_five(
             index=True,
             sep="\t",
         )
+
+
+app = Typer(pretty_exceptions_show_locals=False)
+
+
+@app.command()
+def main(
+    raw_data_root: Path = Path(
+        "local_data/raw/syn2787209/Gene Network Inference"
+    ),
+    processed_data_root: Path = Path("local_data/processed/dream_five"),
+):
+    preprocess_dream_five(raw_data_root, processed_data_root)
+
+
+if __name__ == "__main__":
+    app()

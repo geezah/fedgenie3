@@ -1,11 +1,11 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from tqdm.auto import tqdm
 
-from fedgenie3.genie3.interfaces import (
+from genie3.interfaces import (
     compute_importance_scores,
     initialize_regressor,
 )
@@ -14,21 +14,21 @@ from fedgenie3.genie3.interfaces import (
 class GENIE3:
     def __init__(
         self,
-        regressor_type: str = "RF",
+        regressor_name: str = "LGBM",
         regressor_init_params: Dict[str, Any] = {},
     ):
-        self.regressor_type = regressor_type
+        self.regressor_type = regressor_name
         self.regressor_init_params = regressor_init_params
 
     @staticmethod
     def _partition_data(
         gene_expressions: NDArray,
         target_gene_idx: int,
-        indices_of_candidate_regulators: List[int],
+        candidate_regulator_indices: List[int],
     ) -> Tuple[NDArray, NDArray]:
         # Remove target gene from regulator list and gene expression matrix
         input_gene_indices = [
-            i for i in indices_of_candidate_regulators if i != target_gene_idx
+            i for i in candidate_regulator_indices if i != target_gene_idx
         ]
         X = gene_expressions[:, input_gene_indices]
         y = gene_expressions[:, target_gene_idx]
@@ -37,11 +37,15 @@ class GENIE3:
     def calculate_importances(
         self,
         gene_expressions: NDArray[np.float32],
-        indices_of_candidate_regulators: List[int],
+        candidate_regulator_indices: Optional[List[int]],
         dev_run: bool = False,
     ) -> NDArray[np.float32]:
         num_genes = gene_expressions.shape[1]
-        num_candidate_regulators = len(indices_of_candidate_regulators)
+
+        if candidate_regulator_indices is None:
+            candidate_regulator_indices = list(range(num_genes))
+        num_candidate_regulators = len(candidate_regulator_indices)
+
         importance_matrix = np.zeros(
             (num_genes, num_candidate_regulators), dtype=np.float32
         )
@@ -58,7 +62,7 @@ class GENIE3:
             X, y, input_gene_indices = GENIE3._partition_data(
                 gene_expressions,
                 target_gene_index,
-                indices_of_candidate_regulators,
+                candidate_regulator_indices,
             )
             feature_importances = compute_importance_scores(X, y, regressor)
             importance_matrix[target_gene_index, input_gene_indices] = (
@@ -71,17 +75,19 @@ class GENIE3:
     @staticmethod
     def _generate_gene_ranking(
         importance_matrix: NDArray[np.float32],
-        indices_of_candidate_regulators: List[int],
+        candidate_regulator_indices: Optional[List[int]],
     ) -> List[Tuple[int, int, float]]:
         gene_rankings = []
         num_genes, num_regulators = (
             importance_matrix.shape[0],
             importance_matrix.shape[1],
         )
+        if candidate_regulator_indices is None:
+            candidate_regulator_indices = list(range(num_regulators))
         for i in range(num_genes):
             for j in range(num_regulators):
                 regulator_target_importance_tuples = (
-                    indices_of_candidate_regulators[j],
+                    candidate_regulator_indices[j],
                     i,
                     importance_matrix[i, j],
                 )
@@ -112,24 +118,25 @@ class GENIE3:
     @staticmethod
     def rank_genes_by_importance(
         importance_matrix: NDArray[np.float32],
-        indices_of_candidate_regulators: List[int],
+        candidate_regulator_indices: Optional[List[int]],
     ) -> pd.DataFrame:
-        gene_rankings = GENIE3._generate_gene_ranking(
+        gene_ranking = GENIE3._generate_gene_ranking(
             importance_matrix,
-            indices_of_candidate_regulators,
+            candidate_regulator_indices,
         )
-        gene_rankings = GENIE3._convert_to_dataframe(gene_rankings)
-        return gene_rankings
+        gene_ranking = GENIE3._convert_to_dataframe(gene_ranking)
+        return gene_ranking
 
-    @staticmethod
-    def map_indices_to_gene_names(
-        rankings: pd.DataFrame,
-        indices_to_gene_names: Dict[int, str],
+    def __call__(
+        self,
+        gene_expressions: NDArray,
+        candidate_regulator_indices: Optional[List[int]],
+        dev_run: bool = False,
     ) -> pd.DataFrame:
-        rankings["transcription_factor"] = rankings[
-            "transcription_factor"
-        ].apply(lambda i: indices_to_gene_names[i])
-        rankings["target_gene"] = rankings["target_gene"].apply(
-            lambda i: indices_to_gene_names[i]
+        importance_matrix = self.calculate_importances(
+            gene_expressions, candidate_regulator_indices, dev_run
         )
-        return rankings
+        gene_ranking = self.rank_genes_by_importance(
+            importance_matrix, candidate_regulator_indices
+        )
+        return gene_ranking

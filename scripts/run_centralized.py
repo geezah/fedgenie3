@@ -1,32 +1,32 @@
 from pathlib import Path
 
 from typer import Typer
+from yaml import safe_load
 
-from fedgenie3.data.dataset import load_dream_five
-from fedgenie3.genie3.configs import get_regressor_init_params
-from fedgenie3.genie3.run import run
+from genie3.data import construct_grn_dataset
+from genie3.runner import GENIE3Runner
+from genie3.schema import ComposedConfig
 
 app = Typer(pretty_exceptions_show_locals=False)
 
 
 @app.command()
 def main(
-    root: Path = Path("local_data/processed/dream_five"),
-    network_id: int = 1,
-    dev_run: bool = False,
+    cfg_path: Path,
 ):
-    print(
-        f"Running (non-federated) GRN inference for network {network_id} in {root}"
+    with open(cfg_path, "r") as f:
+        cfg = safe_load(f)
+    cfg = ComposedConfig.model_validate(cfg)
+    grn_dataset = construct_grn_dataset(
+        cfg.data.gene_expressions_path,
+        cfg.data.transcription_factors_path,
+        cfg.data.reference_network_path,
     )
-    grn_dataset = load_dream_five(root, network_id)
-    regressor_type = "LGBM"
-    regressor_init_params = get_regressor_init_params(regressor_type)
-    run(
-        grn_dataset,
-        regressor_type=regressor_type,
-        regressor_init_params=regressor_init_params,
-        dev_run=dev_run,
+    runner = GENIE3Runner(
+        dataset=grn_dataset,
+        regressor_config=cfg.regressor,
     )
+    runner(cfg.dev_run)
 
 
 if __name__ == "__main__":

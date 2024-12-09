@@ -3,7 +3,7 @@ from typing import Dict, Tuple
 import pandas as pd
 from numpy.typing import NDArray
 
-from fedgenie3.genie3.metrics import compute_auroc
+from genie3.metrics import compute_auroc
 
 
 def _prepare_evaluation(
