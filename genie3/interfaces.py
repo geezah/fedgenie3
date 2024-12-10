@@ -44,7 +44,9 @@ def _compute_importance_scores_lgbm(
         X, y, test_size=0.1, random_state=42
     )
     regressor = regressor.fit(X_train, y_train, eval_set=[(X_val, y_val)])
-    return regressor.feature_importances_
+    importances = regressor.feature_importances_
+    normalized_importances = importances / importances.sum()
+    return normalized_importances
 
 
 def _compute_importance_scores_scikit(
@@ -54,4 +56,5 @@ def _compute_importance_scores_scikit(
     **fit_kwargs: Dict[str, Any],
 ) -> NDArray:
     regressor.fit(X, y, **fit_kwargs)
-    return regressor.feature_importances_
+    normalized_importances = regressor.feature_importances_
+    return normalized_importances
