@@ -5,7 +5,7 @@ data:
   indices_to_names:
 
 regressor:
-  name: "RF"
+  name: "ET"
   init_params:
     n_estimators: 1000
     random_state: 42
