@@ -70,6 +70,9 @@ class GENIE3:
             )
             if dev_run:
                 break
+        importance_matrix = importance_matrix / np.sum(
+            importance_matrix, axis=1, keepdims=True
+        )
         return importance_matrix
 
     @staticmethod
