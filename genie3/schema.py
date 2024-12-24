@@ -33,7 +33,7 @@ class RegressorConfig(BaseModel):
     )
 
 
-class ComposedConfig(BaseModel):
+class GENIE3Config(BaseModel):
     data: DataConfig
     regressor: RegressorConfig
 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     CFG_PATH = Path("configs/lightgbm.yaml")
     with open(CFG_PATH, "r") as f:
         cfg = safe_load(f)
-    cfg = ComposedConfig.model_validate(cfg)
+    cfg = GENIE3Config.model_validate(cfg)
     print(cfg.data.gene_expressions_path)
     print(cfg.data.transcription_factors_path)
     print(cfg.data.reference_network_path)
