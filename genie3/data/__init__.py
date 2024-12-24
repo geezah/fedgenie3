@@ -14,6 +14,7 @@ from .processing import (
     map_data,
 )
 
+
 def init_grn_dataset(
     gene_expressions_path: Path,
     transcription_factor_path: Optional[Path],
@@ -39,3 +40,13 @@ def init_grn_dataset(
         transcription_factor_names=transcription_factor_names,
     )
 
+
+__all__ = [
+    "GRNDataset",
+    "init_grn_dataset",
+    "load_gene_expression_data",
+    "load_transcription_factor_data",
+    "load_reference_network_data",
+    "get_names_to_indices_mapping",
+    "map_data",
+]
