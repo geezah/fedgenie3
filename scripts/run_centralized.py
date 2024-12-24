@@ -3,9 +3,9 @@ from pathlib import Path
 from typer import Typer
 from yaml import safe_load
 
-from genie3.data import construct_grn_dataset
-from genie3.runner import GENIE3Runner
+from genie3.data import init_grn_dataset
 from genie3.schema import ComposedConfig
+from genie3.modeling import GENIE3
 
 app = Typer(pretty_exceptions_show_locals=False)
 
@@ -17,16 +17,18 @@ def main(
     with open(cfg_path, "r") as f:
         cfg = safe_load(f)
     cfg = ComposedConfig.model_validate(cfg)
-    grn_dataset = construct_grn_dataset(
+    grn_dataset = init_grn_dataset(
         cfg.data.gene_expressions_path,
         cfg.data.transcription_factors_path,
         cfg.data.reference_network_path,
     )
-    runner = GENIE3Runner(
+    genie3 = GENIE3(
         dataset=grn_dataset,
         regressor_config=cfg.regressor,
     )
-    runner(cfg.dev_run)
+    genie3.fit()
+    results = genie3.evaluate()
+    print(results)
 
 
 if __name__ == "__main__":

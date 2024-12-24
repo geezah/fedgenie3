@@ -3,6 +3,8 @@ from typing import Any, Dict, Literal, Optional
 
 from pydantic import BaseModel, Field
 
+RegressorName = Literal["RF", "ET", "LGBM", "XGB"]
+
 
 class DataConfig(BaseModel):
     gene_expressions_path: Path = Field(
@@ -17,23 +19,23 @@ class DataConfig(BaseModel):
 
 
 class RegressorConfig(BaseModel):
-    name: Literal["LGBM", "RF", "ET"] = Field(
-        "LGBM",
-        description="Type of regressor to use. One of 'LGBM', 'RF', 'ET'",
+    name: RegressorName = Field(
+        "ET",
+        description=f"Type of regressor to use. One of: {RegressorName.__args__}",
     )
     init_params: Dict[str, Any] = Field(
         {"n_estimators": 100, "max_depth": 3},
         description="Parameters to initialize the regressor with. Must comply with the regressor's API.",
+    )
+    fit_params: Dict[str, Any] = Field(
+        {},
+        description="Parameters to fit the regressor with. Must comply with the regressor's API.",
     )
 
 
 class ComposedConfig(BaseModel):
     data: DataConfig
     regressor: RegressorConfig
-    dev_run: Optional[bool] = Field(
-        False,
-        description="Whether to run in development mode",
-    )
 
 
 if __name__ == "__main__":
