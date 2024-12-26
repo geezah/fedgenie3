@@ -66,6 +66,7 @@ class GRNDataset(BaseModel):
                 raise ValueError(
                     "The label column in the reference_network DataFrame must contain only 0s and 1s."
                 )
+        return value
 
     @model_validator(mode="after")
     def tfs_subset_gene_expression_columns(self) -> Self:
@@ -135,16 +136,6 @@ class GRNDataset(BaseModel):
                     )
                 )
         return self
-
-    @model_validator(mode="after")
-    def sort_gene_expressions_columns(self) -> Self:
-        # Put transcription factor names first in the gene_expressions DataFrame
-        columns = list(self.gene_expressions.columns)
-        tfs = list(self.transcription_factor_names)
-        sorted_columns = tfs + [c for c in columns if c not in tfs]
-        self.gene_expressions = self.gene_expressions[sorted_columns]
-        return self
-
 
 if __name__ == "__main__":
     gene_expressions = pd.DataFrame(
