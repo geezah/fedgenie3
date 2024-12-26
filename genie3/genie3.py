@@ -7,7 +7,7 @@ from tqdm.auto import tqdm
 
 from genie3.config import RegressorConfig
 from genie3.data import GRNDataset
-from genie3.data.processing import get_names_to_indices_mapping, map_data
+from genie3.data.utils import map_data
 
 from .regressor import (
     RegressorFactory,
@@ -17,32 +17,24 @@ from .regressor import (
 def run(
     dataset: GRNDataset, regressor_config: RegressorConfig
 ) -> pd.DataFrame:
-    names_to_indices: Dict[str, int] = get_names_to_indices_mapping(
-        dataset.transcription_factor_names
-    )
-    transcription_factor_indices = map_data(
-        dataset.transcription_factor_names, names_to_indices
-    )
     importance_scores = calculate_importances(
         dataset.gene_expressions.values,
-        transcription_factor_indices,
+        dataset._transcription_factor_indices,
         regressor_config.name,
         regressor_config.init_params,
         **regressor_config.fit_params,
     )
-    predicted_network = rank_genes_by_importance(
-        dataset, importance_scores, transcription_factor_indices
-    )
+    predicted_network = rank_genes_by_importance(dataset, importance_scores)
     return predicted_network
 
 
 def partition_data(
     gene_expressions: NDArray,
-    transcription_factors: List[int],
+    transcription_factor_indices: List[int],
     target_gene: int,
 ) -> Tuple[NDArray, NDArray, List[int]]:
     # Remove target gene from regulator list and gene expression matrix
-    input_genes = [i for i in transcription_factors if i != target_gene]
+    input_genes = [i for i in transcription_factor_indices if i != target_gene]
     X = gene_expressions[:, input_genes]
     y = gene_expressions[:, target_gene]
     return X, y, input_genes
@@ -50,14 +42,14 @@ def partition_data(
 
 def calculate_importances(
     gene_expressions: NDArray,
-    transcription_factors: List[int],
+    transcription_factor_indices: List[int],
     regressor_type: str,
     regressor_init_params: Dict[str, Any],
     **fit_params: Dict[str, Any],
 ) -> NDArray[np.float32]:
     # Get the number of genes and transcription factors
     num_genes = gene_expressions.shape[1]
-    num_transcription_factors = len(transcription_factors)
+    num_transcription_factors = len(transcription_factor_indices)
 
     # Initialize importance matrix
     importance_matrix = np.zeros(
@@ -74,7 +66,7 @@ def calculate_importances(
         regressor = RegressorFactory[regressor_type](**regressor_init_params)
         X, y, input_genes = partition_data(
             gene_expressions,
-            transcription_factors,
+            transcription_factor_indices,
             target_gene,
         )
         regressor.fit(X, y, **fit_params)
@@ -87,7 +79,6 @@ def calculate_importances(
 def rank_genes_by_importance(
     dataset: GRNDataset,
     importance_matrix: NDArray[np.float32],
-    transcription_factor_indices: List[int],
 ) -> pd.DataFrame:
     predicted_network = []
     num_genes, num_transcription_factors = (
@@ -95,12 +86,10 @@ def rank_genes_by_importance(
         importance_matrix.shape[1],
     )
     # Create a DataFrame of combinations of target genes and regulators
-    if transcription_factor_indices is None:
-        transcription_factor_indices = list(range(num_transcription_factors))
     for i in range(num_genes):
         for j in range(num_transcription_factors):
             regulator_target_importance_tuples = (
-                transcription_factor_indices[j],
+                dataset._transcription_factor_indices[j],
                 i,
                 importance_matrix[i, j],
             )

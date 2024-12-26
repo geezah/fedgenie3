@@ -11,6 +11,8 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from genie3.data.utils import map_data
+
 
 class GRNDataset(BaseModel):
     """
@@ -52,10 +54,17 @@ class GRNDataset(BaseModel):
         description="A DataFrame representing the reference network with columns: transcription_factor, target_gene, and label.",
     )
     _gene_names: List[str] = PrivateAttr()  # Set dynamically
+    _transcription_factor_indices: List[int] = PrivateAttr()  # Set dynamically
 
     def __init__(self, **data: Any):
         super().__init__(**data)
         self._gene_names = list(self.gene_expressions.columns)
+        names_to_indices = {
+            name: index for index, name in enumerate(self._gene_names)
+        }
+        self._transcription_factor_indices = map_data(
+            self.transcription_factor_names, names_to_indices
+        )
 
     @field_validator("reference_network", mode="after")
     @classmethod
@@ -82,14 +91,6 @@ class GRNDataset(BaseModel):
                 )
         else:
             # If transcription_factor_names is not provided, create a Series from the gene_expressions columns
-            self.transcription_factor_names = pd.Series(
-                self.gene_expressions.columns
-            )
-        return self
-
-    @model_validator(mode="after")
-    def tfs_not_provided(self) -> Self:
-        if self.transcription_factor_names is None:
             self.transcription_factor_names = pd.Series(
                 self.gene_expressions.columns
             )

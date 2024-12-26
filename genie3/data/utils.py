@@ -3,10 +3,6 @@ from typing import Dict, List, Optional, Union
 import pandas as pd
 
 
-def get_names_to_indices_mapping(gene_names: List[str]) -> Dict[str, int]:
-    return {name: index for index, name in enumerate(gene_names)}
-
-
 def map_data(
     data: Union[pd.Series, pd.DataFrame],
     mapping: Union[List, Dict],
@@ -29,14 +25,3 @@ def map_data(
         raise ValueError(
             f"`data` must be a pd.Series or pd.DataFrame. Got {type(data)}."
         )
-
-
-def map_gene_indices_to_names(
-    gene_ranking_with_indices: pd.DataFrame, gene_names: List[str]
-) -> pd.DataFrame:
-    gene_ranking_with_names = map_data(
-        gene_ranking_with_indices,
-        gene_names,
-        subset=["transcription_factor", "target_gene"],
-    )
-    return gene_ranking_with_names
