@@ -28,16 +28,16 @@ class Results(BaseModel):
     auprc: float = Field(
         ..., description="Area under the precision-recall curve", ge=0, le=1
     )
-    fpr: NDArray = Field(..., description="False positive rates")
-    tpr: NDArray = Field(..., description="True positive rates")
-    recall: NDArray = Field(..., description="Recall scores")
-    precision: NDArray = Field(..., description="Precision scores")
     pos_frac: float = Field(
         ...,
         description="Fraction of positive examples in the dataset",
         ge=0,
         le=1,
     )
+    fpr: NDArray = Field(..., description="False positive rates")
+    tpr: NDArray = Field(..., description="True positive rates")
+    recall: NDArray = Field(..., description="Recall scores")
+    precision: NDArray = Field(..., description="Precision scores")
 
 
 def prepare_evaluation(
@@ -81,9 +81,9 @@ def run_evaluation(y_preds: NDArray, y_true: NDArray) -> Results:
     return Results(
         auroc=auroc,
         auprc=auprc,
+        pos_frac=pos_frac,
         fpr=fpr,
         tpr=tpr,
         recall=recall,
         precision=precision,
-        pos_frac=pos_frac,
     )

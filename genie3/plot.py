@@ -1,9 +1,6 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 from numpy.typing import NDArray
-from sklearn.datasets import make_classification
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
 
 
 def plot_roc_curve(
@@ -65,7 +62,7 @@ def plot_precision_recall_curve(
     sns.lineplot(
         x=recall,
         y=precision,
-        label=f"{regressor_name}AUC = {auprc:.4f}, %P: {pos_frac:-4f}",
+        label=f"{regressor_name}AUC = {auprc:.4f}, %P: {pos_frac:.4f}",
         linewidth=2,
         ax=ax,
     )
