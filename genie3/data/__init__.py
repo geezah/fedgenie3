@@ -9,10 +9,6 @@ from .loading import (
     load_reference_network_data,
     load_transcription_factor_data,
 )
-from .processing import (
-    get_names_to_indices_mapping,
-    map_data,
-)
 
 
 def init_grn_dataset(
@@ -47,6 +43,4 @@ __all__ = [
     "load_gene_expression_data",
     "load_transcription_factor_data",
     "load_reference_network_data",
-    "get_names_to_indices_mapping",
-    "map_data",
 ]
