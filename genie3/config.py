@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from .regressor import RegressorFactory
+from .regressor import ConfigurationFactory, RegressorFactory
+
 
 class DataConfig(BaseModel):
     """
@@ -36,16 +37,33 @@ class RegressorConfig(BaseModel):
 
     name: str = Field(
         "ExtraTreesRegressor",
-        description=f"Type of regressor to use. One of: {RegressorFactory.keys()} ",
+        description=f"Type of regressor to use. One of: {RegressorFactory.keys()}",
     )
-    init_params: Dict[str, Any] = Field(
-        {},
+    init_params: Optional[Dict[str, Any]] = Field(
+        None,
         description="Parameters to initialize the regressor with. Must comply with the regressor's API.",
     )
-    fit_params: Dict[str, Any] = Field(
-        {},
+    fit_params: Optional[Dict[str, Any]] = Field(
+        None,
         description="Parameters to fit the regressor with. Must comply with the regressor's API.",
     )
+
+    @field_validator("name", mode="after")
+    @classmethod
+    def check_regressor_name(cls, value: str) -> str:
+        if value not in RegressorFactory.keys():
+            raise ValueError(
+                f"Regressor name must be one of: {RegressorFactory.keys()}"
+            )
+        return value
+
+    @model_validator(mode="after")
+    def set_default_params(self) -> Self:
+        if not self.init_params:
+            self.init_params = ConfigurationFactory[self.name]["init_params"]
+        if not self.fit_params:
+            self.fit_params = ConfigurationFactory[self.name]["fit_params"]
+        return self
 
 
 class GENIE3Config(BaseModel):
@@ -65,7 +83,7 @@ if __name__ == "__main__":
 
     from yaml import safe_load
 
-    CFG_PATH = Path("configs/lightgbm.yaml")
+    CFG_PATH = Path("configs/xgboost.yaml")
     with open(CFG_PATH, "r") as f:
         cfg = safe_load(f)
     cfg = GENIE3Config.model_validate(cfg)
