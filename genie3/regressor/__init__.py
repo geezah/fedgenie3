@@ -1,5 +1,3 @@
-from typing import Literal
-
 from .extratrees import ExtraTreesRegressor
 from .lightgbm import LGBMRegressor
 from .randomforest import RandomForestRegressor
