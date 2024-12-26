@@ -1,47 +1,76 @@
-from typing import Dict, Tuple
+from typing import Tuple
 
 import pandas as pd
 from numpy.typing import NDArray
+from pydantic import BaseModel, ConfigDict, Field
+from sklearn.metrics import auc, precision_recall_curve, roc_curve
 
-from genie3.metrics import compute_auroc
+
+class Results(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    auroc: float = Field(
+        ..., description="Area under the ROC curve", ge=0, le=1
+    )
+    auprc: float = Field(
+        ..., description="Area under the precision-recall curve", ge=0, le=1
+    )
+    fpr: NDArray = Field(..., description="False positive rates")
+    tpr: NDArray = Field(..., description="True positive rates")
+    recall: NDArray = Field(..., description="Recall scores")
+    precision: NDArray = Field(..., description="Precision scores")
+    pos_frac: float = Field(
+        ...,
+        description="Fraction of positive examples in the dataset",
+        ge=0,
+        le=1,
+    )
 
 
-def _prepare_evaluation(
-    predictions: pd.DataFrame, gt: pd.DataFrame
+def prepare_evaluation(
+    predicted_network: pd.DataFrame, true_network: pd.DataFrame
 ) -> Tuple[NDArray, NDArray]:
     """
-    Prepare the predictions and ground truth for evaluation.
+    Prepare the predicted and ground truth network for evaluation.
 
     Args:
-        predictions (pd.DataFrame): Predictions from the model
-        gt (pd.DataFrame): Ground truth data
+        predicted_network (pd.DataFrame): Predicted network
+        true_network (pd.DataFrame): Ground truth network
 
     Returns:
         Tuple[NDArray, NDArray]: Tuple containing importance scores and ground truths as NumPy arrays
     """
-    merged = predictions.merge(
-        gt, on=["transcription_factor", "target_gene"], how="outer"
+    merged = predicted_network.merge(
+        true_network, on=["transcription_factor", "target_gene"], how="outer"
     )
     merged = merged.fillna(0)
-    y_scores = merged["importance"].values
+    y_preds = merged["importance"].values
     y_true = merged["label"].values
-    return y_scores, y_true
+    return y_preds, y_true
 
 
-def evaluate_ranking(
-    predictions: pd.DataFrame, gt: pd.DataFrame
-) -> Dict[str, float]:
+def run_evaluation(y_preds: NDArray, y_true: NDArray) -> Results:
     """
     Evaluate the predictions against the ground truth data.
 
 
     Args:
-        predictions (pd.DataFrame): Predictions from the model
-        gt (pd.DataFrame): Ground truth data
-
+        y_preds (NDArray): Predicted importance scores
+        y_true (NDArray): Ground truth labels
     Returns:
-        Dict[str, float]: Dict containing AUROC score
+        Tuple[float, float]: AUROC and AUPRC scores
     """
-    y_scores, y_true = _prepare_evaluation(predictions, gt)
-    auroc = compute_auroc(y_true, y_scores)
-    return {"auroc": auroc}
+    pos_frac: float = y_true.sum() / len(y_true)
+    fpr, tpr, _ = roc_curve(y_true, y_preds)
+    precision, recall, _ = precision_recall_curve(y_true, y_preds)
+    auroc = auc(fpr, tpr)
+    auprc = auc(recall, precision)
+    return Results(
+        auroc=auroc,
+        auprc=auprc,
+        fpr=fpr,
+        tpr=tpr,
+        recall=recall,
+        precision=precision,
+        pos_frac=pos_frac,
+    )

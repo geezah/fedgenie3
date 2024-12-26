@@ -1,9 +1,9 @@
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
-RegressorName = Literal["RF", "ET", "LGBM", "XGB"]
+from genie3.modeling.regressor import RegressorName
 
 
 class DataConfig(BaseModel):

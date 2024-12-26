@@ -4,8 +4,12 @@ from typer import Typer
 from yaml import safe_load
 
 from genie3.data import init_grn_dataset
-from genie3.schema import GENIE3Config
-from genie3.modeling import GENIE3
+from genie3.eval import prepare_evaluation, run_evaluation
+from genie3.modeling import run
+from genie3.plot import plot_precision_recall_curve, plot_roc_curve
+from genie3.config import GENIE3Config
+from genie3.utils import save_results_inference_only, save_results_all
+from datetime import datetime
 
 app = Typer(pretty_exceptions_show_locals=False)
 
@@ -22,13 +26,38 @@ def main(
         cfg.data.transcription_factors_path,
         cfg.data.reference_network_path,
     )
-    genie3 = GENIE3(
-        dataset=grn_dataset,
-        regressor_config=cfg.regressor,
+    predicted_network = run(grn_dataset, cfg.regressor)
+
+    output_dir = Path("results") / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    if cfg.data.reference_network_path is None:
+        save_results_inference_only(cfg, predicted_network, output_dir)
+        return
+    y_preds, y_true = prepare_evaluation(
+        predicted_network, grn_dataset.reference_network
     )
-    genie3.fit()
-    results = genie3.evaluate()
-    print(results)
+    results = run_evaluation(y_preds, y_true)
+    roc_curve_plot = plot_roc_curve(
+        results.fpr,
+        results.tpr,
+        results.auroc,
+        regressor_name=cfg.regressor.name,
+    )
+    precision_recall_curve_plot = plot_precision_recall_curve(
+        results.recall,
+        results.precision,
+        results.pos_frac,
+        results.auprc,
+        regressor_name=cfg.regressor.name,
+    )
+    save_results_all(
+        cfg,
+        results.auroc,
+        results.auprc,
+        predicted_network,
+        grn_dataset.reference_network,
+        roc_curve_plot,
+        precision_recall_curve_plot,
+    )
 
 
 if __name__ == "__main__":

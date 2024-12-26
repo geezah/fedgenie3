@@ -5,73 +5,29 @@ import pandas as pd
 from numpy.typing import NDArray
 from tqdm.auto import tqdm
 
-from genie3.data import (
-    GRNDataset,
-)
+from genie3.data import GRNDataset
 from genie3.data.processing import map_gene_indices_to_names
-from genie3.eval import evaluate_ranking
 from genie3.modeling.regressor import (
     initialize_regressor,
 )
-from genie3.schema import RegressorConfig
+from genie3.config import RegressorConfig
 
 
-class GENIE3:
-    def __init__(self, dataset: GRNDataset, regressor_config: RegressorConfig):
-        self.dataset = dataset
-        self.regressor_config = regressor_config
-
-    @property
-    def importance_scores(self) -> NDArray:
-        if not hasattr(self, "_importance_scores"):
-            raise ValueError(
-                "GENIE3 has not been performed yet. Therefore, no feature importances available."
-            )
-        return self._importance_scores
-
-    @importance_scores.setter
-    def importance_scores(self, value: NDArray) -> None:
-        self._importance_scores = value
-
-    @property
-    def ranking(self) -> pd.DataFrame:
-        if not hasattr(self, "_ranking"):
-            raise ValueError(
-                "GENIE3 has not been performed yet. Therefore, no gene ranking available."
-            )
-        return self._ranking
-
-    @ranking.setter
-    def ranking(self, value: pd.DataFrame) -> None:
-        self._ranking = value
-
-    @importance_scores.setter
-    def importance_scores(self, value: NDArray) -> None:
-        self._importance_scores = value
-
-    def fit(self, **fit_params: Dict[str, Any]):
-        transcription_factor_indices = list(
-            range(len(self.dataset.transcription_factor_names))
-        )
-        self.importance_scores = calculate_importances(
-            self.dataset.gene_expressions.values,
-            transcription_factor_indices,
-            self.regressor_config.name,
-            self.regressor_config.init_params,
-            **fit_params,
-        )
-        ranking = rank_genes_by_importance(self.importance_scores)
-        self.ranking = map_gene_indices_to_names(
-            ranking,
-            self.dataset._gene_names,
-        )
-        return self.ranking
-
-    def evaluate(self):
-        return evaluate_ranking(
-            self.dataset.reference_network,
-            self.ranking,
-        )
+def run(
+    dataset: GRNDataset, regressor_config: RegressorConfig
+) -> pd.DataFrame:
+    transcription_factor_indices = list(
+        range(len(dataset.transcription_factor_names))
+    )
+    importance_scores = calculate_importances(
+        dataset.gene_expressions.values,
+        transcription_factor_indices,
+        regressor_config.name,
+        regressor_config.init_params,
+        **regressor_config.fit_params,
+    )
+    predicted_network = rank_genes_by_importance(dataset, importance_scores)
+    return predicted_network
 
 
 def partition_data(
@@ -123,9 +79,9 @@ def calculate_importances(
 
 
 def rank_genes_by_importance(
+    dataset: GRNDataset,
     importance_matrix: NDArray[np.float32],
 ) -> pd.DataFrame:
-    gene_rankings = []
     num_genes, num_regulators = (
         importance_matrix.shape[0],
         importance_matrix.shape[1],
@@ -134,13 +90,19 @@ def rank_genes_by_importance(
     # Create a DataFrame of combinations of target genes and regulators
     target_genes = np.repeat(np.arange(num_genes), num_regulators)
     regulators = np.tile(np.arange(num_regulators), num_genes)
-    gene_rankings = pd.DataFrame(
+    predicted_network = pd.DataFrame(
         {
             "transcription_factor": regulators,
             "target_gene": target_genes,
             "importance": importance_series,
         }
     )
-    gene_rankings.sort_values(by="importance", ascending=False, inplace=True)
-    gene_rankings.reset_index(drop=True, inplace=True)
-    return gene_rankings
+    predicted_network.sort_values(
+        by="importance", ascending=False, inplace=True
+    )
+    predicted_network.reset_index(drop=True, inplace=True)
+    predicted_network = map_gene_indices_to_names(
+        predicted_network,
+        dataset._gene_names,
+    )
+    return predicted_network

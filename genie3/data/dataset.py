@@ -44,7 +44,7 @@ class GRNDataset(BaseModel):
         None,
         description="A DataFrame representing the reference network with columns: transcription_factor, target_gene, and label.",
     )
-    _gene_names: List[str] = PrivateAttr() # Set dynamically 
+    _gene_names: List[str] = PrivateAttr()  # Set dynamically
 
     def __init__(self, **data: Any):
         super().__init__(**data)
