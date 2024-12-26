@@ -10,5 +10,4 @@ RegressorFactory = {
 
 __all__ = [
     "RegressorFactory",
-    "SupportedRegressors",
 ]
