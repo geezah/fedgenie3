@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
-from genie3.modeling.regressor import RegressorName
+from .modeling.regressor import RegressorName
 
 
 class DataConfig(BaseModel):

@@ -30,9 +30,8 @@ def save_results_all(
     reference_network: pd.DataFrame,
     roc_curve_plot: Figure,
     precision_recall_curve_plot: Figure,
-    output_dir: Path = Path("results"),
+    output_dir: Path
 ) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
     save_results_inference_only(config, predicted_network, output_dir)
     # Dump the metrics
     pd.DataFrame(
