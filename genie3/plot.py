@@ -65,7 +65,7 @@ def plot_precision_recall_curve(
     sns.lineplot(
         x=recall,
         y=precision,
-        label=f"{regressor_name}AUC = {auprc:.2f}, %P: {pos_frac}",
+        label=f"{regressor_name}AUC = {auprc:.4f}, %P: {pos_frac}",
         linewidth=2,
         ax=ax,
     )

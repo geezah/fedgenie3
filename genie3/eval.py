@@ -72,7 +72,7 @@ def run_evaluation(y_preds: NDArray, y_true: NDArray) -> Results:
     Returns:
         Tuple[float, float]: AUROC and AUPRC scores
     """
-    pos_frac: float = round(y_true.sum() / len(y_true), 2)
+    pos_frac: float = round(y_true.sum() / len(y_true), 4)
     fpr, tpr, _ = roc_curve(y_true, y_preds)
     precision, recall, _ = precision_recall_curve(y_true, y_preds)
     auroc = auc(fpr, tpr)
