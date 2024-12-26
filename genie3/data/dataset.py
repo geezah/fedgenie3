@@ -88,6 +88,14 @@ class GRNDataset(BaseModel):
         return self
 
     @model_validator(mode="after")
+    def tfs_not_provided(self) -> Self:
+        if self.transcription_factor_names is None:
+            self.transcription_factor_names = pd.Series(
+                self.gene_expressions.columns
+            )
+        return self
+
+    @model_validator(mode="after")
     def validate_reference_network(self) -> Self:
         if self.reference_network is not None:
             required_columns = {
@@ -137,6 +145,7 @@ class GRNDataset(BaseModel):
                 )
         return self
 
+
 if __name__ == "__main__":
     gene_expressions = pd.DataFrame(
         {
@@ -148,8 +157,8 @@ if __name__ == "__main__":
     transcription_factor_names = pd.Series(["gene1", "gene2"])
     reference_network = pd.DataFrame(
         {
-            "transcription_factor": ["gene1", "gene2"],
             "target_gene": ["gene3", "gene1"],
+            "transcription_factor": ["gene2", "gene1"],
             "label": [1, 0],
         }
     )

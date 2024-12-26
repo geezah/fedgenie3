@@ -7,7 +7,7 @@ from tqdm.auto import tqdm
 
 from genie3.config import RegressorConfig
 from genie3.data import GRNDataset
-from genie3.data.processing import map_gene_indices_to_names
+from genie3.data.processing import get_names_to_indices_mapping, map_data
 
 from .regressor import (
     RegressorFactory,
@@ -17,8 +17,11 @@ from .regressor import (
 def run(
     dataset: GRNDataset, regressor_config: RegressorConfig
 ) -> pd.DataFrame:
-    transcription_factor_indices = list(
-        range(len(dataset.transcription_factor_names))
+    names_to_indices: Dict[str, int] = get_names_to_indices_mapping(
+        dataset.transcription_factor_names
+    )
+    transcription_factor_indices = map_data(
+        dataset.transcription_factor_names, names_to_indices
     )
     importance_scores = calculate_importances(
         dataset.gene_expressions.values,
@@ -111,8 +114,9 @@ def rank_genes_by_importance(
         by="importance", ascending=False, inplace=True
     )
     predicted_network.reset_index(drop=True, inplace=True)
-    predicted_network = map_gene_indices_to_names(
+    predicted_network = map_data(
         predicted_network,
         dataset._gene_names,
+        subset=["transcription_factor", "target_gene"],
     )
     return predicted_network
