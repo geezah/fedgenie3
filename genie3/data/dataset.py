@@ -1,7 +1,14 @@
 from typing import Any, List, Optional
 
 import pandas as pd
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    field_validator,
+    model_validator,
+)
 from typing_extensions import Self
 
 
@@ -49,6 +56,16 @@ class GRNDataset(BaseModel):
     def __init__(self, **data: Any):
         super().__init__(**data)
         self._gene_names = list(self.gene_expressions.columns)
+
+    @field_validator("reference_network", mode="after")
+    @classmethod
+    def check_label_values(cls, value: pd.DataFrame) -> pd.DataFrame:
+        # Verify that the label column contains only 0s and 1s
+        if value is not None:
+            if not set(value["label"].unique()) == {0, 1}:
+                raise ValueError(
+                    "The label column in the reference_network DataFrame must contain only 0s and 1s."
+                )
 
     @model_validator(mode="after")
     def tfs_subset_gene_expression_columns(self) -> Self:
