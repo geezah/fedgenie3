@@ -32,8 +32,8 @@ def init_grn_dataset(
         )
     return GRNDataset(
         gene_expressions=gene_expressions,
-        reference_network=reference_network,
         transcription_factor_names=transcription_factor_names,
+        reference_network=reference_network,
     )
 
 

@@ -1,15 +1,18 @@
+from datetime import datetime
 from pathlib import Path
 
 from typer import Typer
 from yaml import safe_load
 
+from genie3.config import GENIE3Config
 from genie3.data import init_grn_dataset
 from genie3.eval import prepare_evaluation, run_evaluation
-from genie3.modeling import run
+from genie3.genie3 import run
 from genie3.plot import plot_precision_recall_curve, plot_roc_curve
-from genie3.config import GENIE3Config
-from genie3.utils import save_results_inference_only, save_results_all
-from datetime import datetime
+from genie3.utils import (
+    write_results_full_pipeline,
+    write_results_inference_only,
+)
 
 app = Typer(pretty_exceptions_show_locals=False)
 
@@ -30,7 +33,7 @@ def main(
 
     output_dir = Path("results") / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if cfg.data.reference_network_path is None:
-        save_results_inference_only(cfg, predicted_network, output_dir)
+        write_results_inference_only(cfg, predicted_network, output_dir)
         return
     y_preds, y_true = prepare_evaluation(
         predicted_network, grn_dataset.reference_network
@@ -49,7 +52,7 @@ def main(
         results.auprc,
         regressor_name=cfg.regressor.name,
     )
-    save_results_all(
+    write_results_full_pipeline(
         cfg,
         results.auroc,
         results.auprc,
@@ -57,6 +60,7 @@ def main(
         grn_dataset.reference_network,
         roc_curve_plot,
         precision_recall_curve_plot,
+        output_dir,
     )
 
 

@@ -3,8 +3,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
-from .modeling.regressor import RegressorName
-
+from .regressor import RegressorFactory
 
 class DataConfig(BaseModel):
     """
@@ -30,17 +29,17 @@ class RegressorConfig(BaseModel):
     """
     RegressorConfig is a configuration class for specifying the parameters of a supported regressor.
     Attributes:
-        name (RegressorName): Type of regressor to use. One of the values defined in RegressorName.
+        name (str): Type of regressor to use. One of the values defined in the regressor module.
         init_params (Dict[str, Any]): Parameters to initialize the regressor with. Must comply with the regressor's API.
         fit_params (Dict[str, Any]): Parameters to fit the regressor with. Must comply with the regressor's API.
     """
 
-    name: RegressorName = Field(
-        "ET",
-        description=f"Type of regressor to use. One of: {RegressorName.__args__}",
+    name: str = Field(
+        "ExtraTreesRegressor",
+        description=f"Type of regressor to use. One of: {RegressorFactory.keys()} ",
     )
     init_params: Dict[str, Any] = Field(
-        {"n_estimators": 100, "max_depth": 3},
+        {},
         description="Parameters to initialize the regressor with. Must comply with the regressor's API.",
     )
     fit_params: Dict[str, Any] = Field(
@@ -56,6 +55,7 @@ class GENIE3Config(BaseModel):
         data (DataConfig): Configuration for the data.
         regressor (RegressorConfig): Configuration for the regressor.
     """
+
     data: DataConfig
     regressor: RegressorConfig
 

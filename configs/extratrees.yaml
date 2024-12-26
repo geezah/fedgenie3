@@ -4,7 +4,7 @@ data:
   reference_network_path: "local_data/processed/dream_five/net1_in-silico/reference_network_data.tsv"
 
 regressor:
-  name: "ET"
+  name: "ExtraTreesRegressor"
   init_params:
     n_estimators: 100
     random_state: 42

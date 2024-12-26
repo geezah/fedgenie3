@@ -7,8 +7,8 @@ from tqdm.auto import tqdm
 
 from genie3.data import GRNDataset
 from genie3.data.processing import map_gene_indices_to_names
-from genie3.modeling.regressor import (
-    initialize_regressor,
+from .regressor import (
+    RegressorFactory,
 )
 from genie3.config import RegressorConfig
 
@@ -65,7 +65,7 @@ def calculate_importances(
         unit="gene",
     )
     for target_gene in progress_bar:
-        regressor = initialize_regressor(regressor_type, regressor_init_params)
+        regressor = RegressorFactory[regressor_type](**regressor_init_params)
         X, y, input_genes = partition_data(
             gene_expressions,
             transcription_factors,

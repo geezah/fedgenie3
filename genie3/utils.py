@@ -119,7 +119,7 @@ def write_results_full_pipeline(
     reference_network: pd.DataFrame,
     roc_curve_plot: Figure,
     precision_recall_curve_plot: Figure,
-    output_dir: Path,
+    output_dir: Path = Path("results"),
 ) -> None:
     """
     Save all results including metrics, predicted and reference networks, and plots.
