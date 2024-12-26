@@ -9,7 +9,7 @@ from sklearn.metrics import auc, precision_recall_curve, roc_curve
 class Results(BaseModel):
     """
     Container model to store and verify evaluation results of GENIE3.
-    
+
     Attributes:
         auroc (float): Area under the ROC curve. Must be between 0 and 1.
         auprc (float): Area under the precision-recall curve. Must be between 0 and 1.
@@ -19,6 +19,7 @@ class Results(BaseModel):
         precision (NDArray): Precision scores.
         pos_frac (float): Fraction of positive examples in the dataset. Must be between 0 and 1.
     """
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     auroc: float = Field(
@@ -72,7 +73,7 @@ def run_evaluation(y_preds: NDArray, y_true: NDArray) -> Results:
     Returns:
         Tuple[float, float]: AUROC and AUPRC scores
     """
-    pos_frac: float = round(y_true.sum() / len(y_true), 4)
+    pos_frac: float = y_true.sum() / len(y_true)
     fpr, tpr, _ = roc_curve(y_true, y_preds)
     precision, recall, _ = precision_recall_curve(y_true, y_preds)
     auroc = auc(fpr, tpr)

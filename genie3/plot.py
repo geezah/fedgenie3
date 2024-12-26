@@ -26,7 +26,7 @@ def plot_roc_curve(
     sns.lineplot(
         x=fpr,
         y=tpr,
-        label=f"{regressor_name}AUC = {roc_auc:.2f}",
+        label=f"{regressor_name}AUC = {roc_auc:.4f}",
         linewidth=2,
         ax=ax,
     )
@@ -65,7 +65,7 @@ def plot_precision_recall_curve(
     sns.lineplot(
         x=recall,
         y=precision,
-        label=f"{regressor_name}AUC = {auprc:.4f}, %P: {pos_frac}",
+        label=f"{regressor_name}AUC = {auprc:.4f}, %P: {pos_frac:-4f}",
         linewidth=2,
         ax=ax,
     )
