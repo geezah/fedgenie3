@@ -7,6 +7,14 @@ from .modeling.regressor import RegressorName
 
 
 class DataConfig(BaseModel):
+    """
+    DataConfig is a configuration model for specifying paths to various data files used in the application.
+    Attributes:
+        gene_expressions_path (Path): Path to the gene expression data.
+        transcription_factors_path (Optional[Path]): Path to the transcription factor data. Defaults to None.
+        reference_network_path (Optional[Path]): Path to the reference network data. Defaults to None.
+    """
+
     gene_expressions_path: Path = Field(
         ..., description="Path to the gene expression data"
     )
@@ -19,6 +27,14 @@ class DataConfig(BaseModel):
 
 
 class RegressorConfig(BaseModel):
+    """
+    RegressorConfig is a configuration class for specifying the parameters of a supported regressor.
+    Attributes:
+        name (RegressorName): Type of regressor to use. One of the values defined in RegressorName.
+        init_params (Dict[str, Any]): Parameters to initialize the regressor with. Must comply with the regressor's API.
+        fit_params (Dict[str, Any]): Parameters to fit the regressor with. Must comply with the regressor's API.
+    """
+
     name: RegressorName = Field(
         "ET",
         description=f"Type of regressor to use. One of: {RegressorName.__args__}",
@@ -34,6 +50,12 @@ class RegressorConfig(BaseModel):
 
 
 class GENIE3Config(BaseModel):
+    """
+    Configuration class for the GENIE3 pipeline.
+    Attributes:
+        data (DataConfig): Configuration for the data.
+        regressor (RegressorConfig): Configuration for the regressor.
+    """
     data: DataConfig
     regressor: RegressorConfig
 

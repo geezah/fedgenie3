@@ -9,7 +9,18 @@ from sklearn.model_selection import train_test_split
 def plot_roc_curve(
     fpr: NDArray, tpr: NDArray, roc_auc: float, regressor_name: str = ""
 ) -> plt.Figure:
-    # Find the best threshold (e.g., closest to top-left corner)
+    """
+    Plots the Receiver Operating Characteristic (ROC) curve.
+
+    Args:
+        fpr (NDArray): Array of false positive rates.
+        tpr (NDArray): Array of true positive rates.
+        roc_auc (float): Area Under the ROC Curve (AUC) score.
+        regressor_name (str, optional): Name of the regressor to be displayed in the plot label. Defaults to "".
+
+    Returns:
+        plt.Figure: The matplotlib figure object containing the ROC curve plot.
+    """
     regressor_name = regressor_name + " " if regressor_name else ""
     fig, ax = plt.subplots()
     sns.lineplot(
@@ -36,7 +47,19 @@ def plot_precision_recall_curve(
     auprc: float,
     regressor_name: str = "",
 ) -> plt.Figure:
-    # Calculate precision, recall, and thresholds
+    """
+    Plots a precision-recall curve using the provided recall and precision values.
+
+    Args:
+        recall (NDArray): Array of recall values.
+        precision (NDArray): Array of precision values.
+        pos_frac (float): Fraction of positive samples.
+        auprc (float): Area under the precision-recall curve.
+        regressor_name (str, optional): Name of the regressor to be displayed in the plot label. Defaults to "".
+
+    Returns:
+        plt.Figure: The matplotlib figure object containing the precision-recall curve.
+    """
     regressor_name = regressor_name + " " if regressor_name else ""
     fig, ax = plt.subplots()
     sns.lineplot(
