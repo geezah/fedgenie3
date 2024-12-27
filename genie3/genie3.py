@@ -24,7 +24,11 @@ def run(
         regressor_config.init_params,
         **regressor_config.fit_params,
     )
-    predicted_network = rank_genes_by_importance(dataset, importance_scores)
+    predicted_network = rank_genes_by_importance(
+        importance_scores,
+        dataset._transcription_factor_indices,
+        dataset._gene_names,
+    )
     return predicted_network
 
 
@@ -78,8 +82,9 @@ def calculate_importances(
 
 
 def rank_genes_by_importance(
-    dataset: GRNDataset,
     importance_matrix: NDArray[np.float32],
+    transcription_factor_indices: List[int],
+    gene_names: List[str],
 ) -> pd.DataFrame:
     predicted_network = []
     num_genes, num_transcription_factors = (
@@ -90,7 +95,7 @@ def rank_genes_by_importance(
     for i in range(num_genes):
         for j in range(num_transcription_factors):
             regulator_target_importance_tuples = (
-                dataset._transcription_factor_indices[j],
+                transcription_factor_indices[j],
                 i,
                 importance_matrix[i, j],
             )
@@ -106,7 +111,7 @@ def rank_genes_by_importance(
     predicted_network.reset_index(drop=True, inplace=True)
     predicted_network = map_data(
         predicted_network,
-        dataset._gene_names,
+        gene_names,
         subset=["transcription_factor", "target_gene"],
     )
     return predicted_network
