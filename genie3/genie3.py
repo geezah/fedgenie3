@@ -61,8 +61,9 @@ def calculate_importances(
         total=num_genes,
         desc="Computing importances",
         unit="gene",
+        miniters=num_genes // 100,
     )
-    for target_gene in progress_bar:
+    for idx, target_gene in enumerate(progress_bar):
         regressor = RegressorFactory[regressor_type](**regressor_init_params)
         X, y, input_genes = partition_data(
             gene_expressions,
