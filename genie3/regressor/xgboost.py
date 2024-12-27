@@ -9,14 +9,13 @@ from .protocol import RegressorProtocol
 
 DefaultXGBoostConfiguration = {
     "init_params": {
-        "n_estimators": 100,
+        "n_estimators": 500,
         "learning_rate": 0.01,
         "max_depth": 3,
-        "early_stopping_rounds": 10,
+        "early_stopping_rounds": 30,
         "random_state": 42,
         "importance_type": "gain",
-        "subsample": 0.8,
-        "colsample_bytree": 0.8,
+        "colsample_bytree": 0.1,
         "verbosity": 0,
         "n_jobs" : 8
     },

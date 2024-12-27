@@ -5,15 +5,3 @@ data:
 
 regressor:
   name: "LGBMRegressor"
-  init_params:
-    n_estimators : 1000
-    learning_rate: 0.01
-    max_depth: 3
-    num_leaves: 6
-    n_iter_no_change: 25
-    random_state: 42
-    importance_type: "gain"
-    subsample: 0.8
-    colsample_bytree: 0.8
-    verbose: -1
-    n_jobs: 8
