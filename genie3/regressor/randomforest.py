@@ -9,10 +9,9 @@ from .protocol import RegressorProtocol
 DefaultRandomForestConfiguration = {
     "init_params": {
         "n_estimators": 100,
-        "max_depth": 4,
         "n_jobs": -1,
         "random_state": 42,
-        "max_features": 0.8,
+        "max_features": 0.1
     },
     "fit_params": {},
 }
