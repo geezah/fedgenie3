@@ -3,3 +3,4 @@ __pycache__
 credentials.conf
 *_data/
 dist
+wandb
