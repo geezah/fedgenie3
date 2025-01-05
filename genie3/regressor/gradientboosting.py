@@ -9,7 +9,7 @@ from .protocol import RegressorProtocol
 
 DefaultGradientBoostingConfiguration = {
     "init_params": {
-        "n_estimators": 200,
+        "n_estimators": 100,
         "learning_rate": 0.1,
         "subsample": 0.9,
         "max_features": 0.1,
