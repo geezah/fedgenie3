@@ -5,3 +5,4 @@ data:
 
 regressor:
   name: "ExtraTreesRegressor"
+  init_params:

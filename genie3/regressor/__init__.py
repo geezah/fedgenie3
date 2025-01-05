@@ -1,22 +1,25 @@
 from .extratrees import DefaultExtraTreesConfiguration, ExtraTreesRegressor
+from .gradientboosting import (
+    DefaultGradientBoostingConfiguration,
+    GradientBoostingRegressor,
+)
 from .lightgbm import DefaultLightGBMConfiguration, LGBMRegressor
 from .randomforest import (
     DefaultRandomForestConfiguration,
     RandomForestRegressor,
 )
-from .xgboost import DefaultXGBoostConfiguration, XGBRegressor
 
 RegressorFactory = {
     "RandomForestRegressor": RandomForestRegressor,
     "ExtraTreesRegressor": ExtraTreesRegressor,
     "LGBMRegressor": LGBMRegressor,
-    "XGBRegressor": XGBRegressor,
+    "GradientBoostingRegressor": GradientBoostingRegressor,
 }
 ConfigurationFactory = {
     "RandomForestRegressor": DefaultRandomForestConfiguration,
     "ExtraTreesRegressor": DefaultExtraTreesConfiguration,
+    "GradientBoostingRegressor": DefaultGradientBoostingConfiguration,
     "LGBMRegressor": DefaultLightGBMConfiguration,
-    "XGBRegressor": DefaultXGBoostConfiguration,
 }
 
 __all__ = ["RegressorFactory", "ConfigurationFactory"]

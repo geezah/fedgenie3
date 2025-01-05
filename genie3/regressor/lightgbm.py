@@ -8,10 +8,11 @@ from .protocol import RegressorProtocol
 
 DefaultLightGBMConfiguration = {
     "init_params": {
-        "n_estimators": 5000,
+        "n_estimators": 1000,
         "learning_rate": 0.01,
         "max_depth": 3,
         "n_iter_no_change": 25,
+        "early_stopping_min_delta": 0.0001,
         "random_state": 42,
         "importance_type": "gain",
         "subsample": 0.9,
