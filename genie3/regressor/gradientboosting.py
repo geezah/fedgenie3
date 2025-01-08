@@ -11,7 +11,6 @@ DefaultGradientBoostingConfiguration = {
     "init_params": {
         "n_estimators": 100,
         "learning_rate": 0.1,
-        "subsample": 0.9,
         "max_features": 0.1,
         "n_iter_no_change": 25,
         "random_state": 42,
