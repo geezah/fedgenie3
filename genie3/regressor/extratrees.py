@@ -10,7 +10,6 @@ from .protocol import RegressorProtocol
 DefaultExtraTreesConfiguration = {
     "init_params": {
         "n_estimators": 100,
-        "n_jobs": -1,
         "random_state": 42,
         "max_features": 0.1
     },
