@@ -14,7 +14,6 @@ DefaultGradientBoostingConfiguration = {
         "max_features": 0.1,
         "n_iter_no_change": 25,
         "random_state": 42,
-        "verbose": 0,
     },
     "fit_params": {},
 }
