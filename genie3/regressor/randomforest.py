@@ -10,7 +10,8 @@ DefaultRandomForestConfiguration = {
     "init_params": {
         "n_estimators": 100,
         "random_state": 42,
-        "max_features": 0.1
+        "max_features": 0.1,
+        "n_jobs" : 8,
     },
     "fit_params": {},
 }
