@@ -25,9 +25,6 @@ def main(
         cfg.data.transcription_factors_path,
         cfg.data.reference_network_path,
     )
-    wandb.login(
-        key=environ["WANDB_API_KEY"], relogin=True, host="https://api.wandb.ai"
-    )
     with wandb.init(
         project="genie3",
         config={
